@@ -1,0 +1,38 @@
+<svg width="512" height="160" viewBox="0 0 512 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="52%" stop-color="#D4A017" />
+      <stop offset="100%" stop-color="#8B5A18" />
+    </linearGradient>
+    <linearGradient id="blood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#BC1A1A" />
+      <stop offset="100%" stop-color="#6E0D0D" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="480" height="128" rx="26" fill="#1A140F" stroke="#5C4033" stroke-width="2" />
+  <path
+    d="M56 80C56 55.6995 75.6995 36 100 36H116L128 56L140 36H156C180.301 36 200 55.6995 200 80C200 114 174 138 128 146C82 138 56 114 56 80Z"
+    fill="url(#blood)"
+    stroke="#D4A017"
+    stroke-width="4"
+    filter="url(#shadow)"
+  />
+  <path d="M128 52L138 72H160L142 84L149 104L128 92L107 104L114 84L96 72H118L128 52Z" fill="url(#gold)" />
+  <text
+    x="234"
+    y="86"
+    fill="url(#gold)"
+    font-family="Showcard Gothic, Cinzel Decorative, Georgia, serif"
+    font-size="44"
+    font-weight="700"
+    letter-spacing="3"
+    filter="url(#shadow)"
+  >
+    GLADIATORS
+  </text>
+  <path d="M232 102H460" stroke="#BC1A1A" stroke-width="6" stroke-linecap="round" />
+</svg>

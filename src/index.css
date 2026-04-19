@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1a140f;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(212, 160, 23, 0.1), transparent 28%),
+    linear-gradient(180deg, #2a1810 0%, #1a140f 48%, #120d0a 100%);
+  color: #f5e6d3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: rgba(212, 160, 23, 0.28);
+  color: #fff7da;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a140f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7c5a24, #8b0000);
+  border-radius: 999px;
+}
+
+@layer components {
+  .section-shell {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-title {
+    @apply font-display text-3xl uppercase tracking-[0.2em] text-arena-gold sm:text-4xl;
+  }
+
+  .section-copy {
+    @apply text-sm leading-7 text-arena-sand sm:text-base;
+  }
+
+  .panel-card {
+    @apply rounded-[28px] border border-arena-bronzeLight/50 bg-arena-panel/90 shadow-arena backdrop-blur-sm;
+  }
+
+  .gold-frame {
+    @apply rounded-[28px] border border-arena-gold/35 bg-gradient-to-b from-arena-stone/90 to-arena-ember/90 shadow-gold;
+  }
+
+  .blood-button {
+    @apply inline-flex items-center justify-center rounded-full border border-arena-bloodGlow/60 bg-gradient-to-r from-arena-blood to-arena-bloodGlow px-6 py-3 font-semibold uppercase tracking-[0.16em] text-[#ffe6e6] transition duration-300 hover:-translate-y-0.5 hover:shadow-blood;
+  }
+
+  .stone-button {
+    @apply inline-flex items-center justify-center rounded-full border border-arena-gold/50 bg-arena-bronze/75 px-6 py-3 font-semibold uppercase tracking-[0.16em] text-arena-parchment transition duration-300 hover:-translate-y-0.5 hover:bg-arena-stone;
+  }
+
+  .ghost-button {
+    @apply inline-flex items-center justify-center rounded-full border border-arena-bronzeLight/35 bg-arena-panel/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-arena-parchment transition duration-300 hover:-translate-y-0.5 hover:border-arena-gold/45 hover:text-arena-goldBright;
+  }
+
+  .status-pill {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em];
+  }
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
