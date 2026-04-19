@@ -6,7 +6,7 @@ export default function ProgressBar({ progress, completed, total }) {
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">
-            Campaign Completion
+            Task Completion
           </p>
           <p className="mt-2 font-display text-4xl uppercase tracking-[0.16em] text-arena-goldBright">
             {progress}%
