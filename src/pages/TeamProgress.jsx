@@ -6,10 +6,16 @@ import TodoList from '../components/TodoList'
 const storageKey = 'gladiators-simple-tasks'
 
 const seededTasks = [
-  { id: 1, taskName: 'Finish landing page polish', done: true },
-  { id: 2, taskName: 'Replace trailer with real video', done: false },
-  { id: 3, taskName: 'Connect real leaderboard backend', done: false }
+  { id: 1, taskName: 'Finish landing page polish', done: true, priority: 'P2' },
+  { id: 2, taskName: 'Replace trailer with real video', done: false, priority: 'P1' },
+  { id: 3, taskName: 'Connect real leaderboard backend', done: false, priority: 'P1' }
 ]
+
+const normalizeTasks = (items) =>
+  items.map((task) => ({
+    ...task,
+    priority: task.priority || 'P3'
+  }))
 
 export default function TeamProgress() {
   const [tasks, setTasks] = useState(() => {
@@ -21,7 +27,7 @@ export default function TeamProgress() {
 
     try {
       const parsed = JSON.parse(stored)
-      return Array.isArray(parsed) ? parsed : seededTasks
+      return Array.isArray(parsed) ? normalizeTasks(parsed) : seededTasks
     } catch (error) {
       console.error('Failed to read saved tasks:', error)
       return seededTasks
@@ -42,13 +48,14 @@ export default function TeamProgress() {
     setProgress(completionRate)
   }, [tasks])
 
-  const addTask = (taskName) => {
+  const addTask = ({ taskName, priority }) => {
     setTasks((current) => [
       ...current,
       {
         id: Date.now(),
         taskName: taskName.trim(),
-        done: false
+        done: false,
+        priority
       }
     ])
   }

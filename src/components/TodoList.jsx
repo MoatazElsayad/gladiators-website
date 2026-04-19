@@ -2,11 +2,33 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+const priorityOrder = {
+  P1: 1,
+  P2: 2,
+  P3: 3
+}
+
+const priorityStyles = {
+  P1: 'border-red-500/45 bg-red-500/10 text-red-300',
+  P2: 'border-amber-400/45 bg-amber-400/10 text-amber-200',
+  P3: 'border-sky-400/45 bg-sky-400/10 text-sky-200'
+}
+
 export default function TodoList({ tasks, onAddTask, onToggleTask, onRemoveTask }) {
   const [taskName, setTaskName] = useState('')
+  const [priority, setPriority] = useState('P3')
 
   const orderedTasks = useMemo(
-    () => [...tasks].sort((a, b) => Number(a.done) - Number(b.done)),
+    () =>
+      [...tasks].sort((a, b) => {
+        const priorityDifference = priorityOrder[a.priority] - priorityOrder[b.priority]
+
+        if (priorityDifference !== 0) {
+          return priorityDifference
+        }
+
+        return Number(a.done) - Number(b.done)
+      }),
     [tasks]
   )
 
@@ -17,8 +39,9 @@ export default function TodoList({ tasks, onAddTask, onToggleTask, onRemoveTask 
       return
     }
 
-    onAddTask(taskName)
+    onAddTask({ taskName, priority })
     setTaskName('')
+    setPriority('P3')
   }
 
   return (
@@ -37,6 +60,22 @@ export default function TodoList({ tasks, onAddTask, onToggleTask, onRemoveTask 
               placeholder="Add a new task"
               className="w-full rounded-2xl border border-arena-bronzeLight/35 bg-arena-void/80 px-4 py-3 text-arena-parchment outline-none transition focus:border-arena-gold/65"
             />
+          </div>
+
+          <div>
+            <label htmlFor="priority" className="mb-2 block text-xs uppercase tracking-[0.16em] text-arena-sand">
+              Priority
+            </label>
+            <select
+              id="priority"
+              value={priority}
+              onChange={(event) => setPriority(event.target.value)}
+              className="w-full rounded-2xl border border-arena-bronzeLight/35 bg-arena-void/80 px-4 py-3 text-arena-parchment outline-none transition focus:border-arena-gold/65"
+            >
+              <option value="P1">P1</option>
+              <option value="P2">P2</option>
+              <option value="P3">P3</option>
+            </select>
           </div>
 
           <button type="submit" className="blood-button w-full text-xs">
@@ -77,9 +116,20 @@ export default function TodoList({ tasks, onAddTask, onToggleTask, onRemoveTask 
                     onChange={() => onToggleTask(task.id)}
                     className="h-5 w-5 rounded border-arena-gold/40 bg-arena-panel text-arena-goldBright focus:ring-arena-gold/30"
                   />
-                  <span className={`text-base ${task.done ? 'text-arena-sand line-through opacity-70' : 'text-arena-parchment'}`}>
-                    {task.taskName}
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span
+                        className={`status-pill ${priorityStyles[task.priority] || priorityStyles.P3}`}
+                      >
+                        {task.priority}
+                      </span>
+                      <span
+                        className={`text-base ${task.done ? 'text-arena-sand line-through opacity-70' : 'text-arena-parchment'}`}
+                      >
+                        {task.taskName}
+                      </span>
+                    </div>
+                  </div>
                 </label>
 
                 <button
