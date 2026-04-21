@@ -1,0 +1,5 @@
+[
+  { "id": 1, "taskName": "Finish landing page polish", "done": true, "priority": "P2" },
+  { "id": 2, "taskName": "Replace trailer with real video", "done": false, "priority": "P1" },
+  { "id": 3, "taskName": "Connect real leaderboard backend", "done": false, "priority": "P1" }
+]
