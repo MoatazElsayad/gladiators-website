@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Menu, X, Flame } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Menu, Swords, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
 const navItems = [
@@ -10,14 +10,16 @@ const navItems = [
 ]
 
 const linkClasses = ({ isActive }) =>
-  `px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition ${
+  [
+    'rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.16em] transition duration-300',
     isActive
       ? 'bg-arena-gold/15 text-arena-gold'
       : 'text-arena-parchment hover:bg-arena-gold/10 hover:text-arena-goldBright'
-  }`
+  ].join(' ')
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const location = useLocation()
   const logoPath = `${import.meta.env.BASE_URL}logo.svg`
 
@@ -25,20 +27,38 @@ export default function Navbar() {
     setMobileOpen(false)
   }, [location.pathname])
 
+  useEffect(() => {
+    if (!showModal) {
+      return undefined
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setShowModal(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [showModal])
+
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-arena-bronzeLight/30 bg-arena-void/80 backdrop-blur-xl">
         <div className="section-shell flex h-20 items-center justify-between">
-          {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-2">
-            <img src={logoPath} alt="Gladiators" className="h-12 w-auto" />
+          <NavLink to="/" className="flex items-center gap-3">
+            <img src={logoPath} alt="Gladiators logo" className="h-12 w-auto sm:h-14" />
             <div className="hidden sm:block">
-              <p className="text-lg font-bold uppercase text-arena-goldBright">Gladiators</p>
-              <p className="text-xs uppercase tracking-wider text-arena-sand">Battle Arena</p>
+              <p className="font-display text-lg uppercase tracking-[0.18em] text-arena-goldBright">
+                Gladiators
+              </p>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-arena-sand">
+                Battle Arena
+              </p>
             </div>
           </NavLink>
 
-          {/* Desktop Nav */}
           <nav className="hidden items-center gap-2 lg:flex">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClasses}>
@@ -47,26 +67,23 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Desktop CTA */}
-          <div className="hidden lg:block">
-            <button className="blood-button text-xs">
-              <Flame className="mr-2 h-4 w-4" />
+          <div className="hidden items-center gap-3 lg:flex">
+            <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
+              <Swords className="mr-2 h-4 w-4" />
               Play Game
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             type="button"
-            aria-label="Toggle menu"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden inline-flex h-12 w-12 items-center justify-center rounded-full border border-arena-gold/35 bg-arena-panel/80 text-arena-gold"
+            aria-label="Toggle navigation"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-arena-gold/35 bg-arena-panel/80 text-arena-gold lg:hidden"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -75,14 +92,14 @@ export default function Navbar() {
               exit={{ opacity: 0, height: 0 }}
               className="border-t border-arena-bronzeLight/30 bg-arena-ember/95 lg:hidden"
             >
-              <div className="section-shell flex flex-col gap-2 py-4">
+              <div className="section-shell flex flex-col gap-3 py-4">
                 {navItems.map((item) => (
                   <NavLink key={item.to} to={item.to} end={item.to === '/'} className={linkClasses}>
                     {item.label}
                   </NavLink>
                 ))}
-                <button className="blood-button text-xs w-full">
-                  <Flame className="mr-2 h-4 w-4" />
+                <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
+                  <Swords className="mr-2 h-4 w-4" />
                   Play Game
                 </button>
               </div>
@@ -90,6 +107,44 @@ export default function Navbar() {
           )}
         </AnimatePresence>
       </header>
+
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowModal(false)}
+            aria-hidden={!showModal}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="play-game-modal-title"
+              className="gold-frame w-full max-w-lg p-8 text-center"
+              initial={{ y: 24, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 12, opacity: 0, scale: 0.98 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p
+                id="play-game-modal-title"
+                className="mb-3 font-display text-3xl uppercase tracking-[0.18em] text-arena-goldBright"
+              >
+                Arena Gate Locked
+              </p>
+              <p className="section-copy">
+                The live game embed is coming soon. This page is ready for launch now, and the playable
+                build can drop into the hero section as soon as it is available.
+              </p>
+              <button type="button" onClick={() => setShowModal(false)} className="blood-button mt-6 text-xs">
+                Return to Camp
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
