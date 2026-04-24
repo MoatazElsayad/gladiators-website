@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
 import {
-  ArrowRight,
-  Crown,
   Flame,
   Shield,
-  Sparkles,
   Swords,
-  Trophy
+  Trophy,
+  Crown,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import knight from '../assets/knight.png'
@@ -17,24 +17,18 @@ const featureCards = [
   {
     icon: Swords,
     title: 'Precision Combat',
-    text: 'Built around responsive duels, timed attacks, range checks, and high-pressure arena pacing.'
+    text: 'Built around responsive duels, timed attacks, and high-pressure arena pacing.'
   },
   {
     icon: Trophy,
     title: 'Persistent Glory',
-    text: 'Profiles, progress tracking, and leaderboards are at the heart of the Battle Arena experience.'
+    text: 'Profiles, progress tracking, and leaderboards drive the Battle Arena experience.'
   },
   {
     icon: Shield,
     title: 'Hero Roster',
-    text: 'Knight, Demon Slayer, Huntress, Wizard, and more classes step into the same blood-lit world.'
+    text: 'Multiple unique classes with distinct playstyles step into the arena.'
   }
-]
-
-const heroStats = [
-  { label: 'Heroes Available', value: '9' },
-  { label: 'Arena Mood', value: 'Ancient / Brutal' },
-  { label: 'Tech Core', value: 'C++ + Qt 6' }
 ]
 
 const rosterCards = [
@@ -43,39 +37,21 @@ const rosterCards = [
     role: 'Balanced Vanguard',
     art: knight,
     accent: 'border-arena-gold/35 bg-arena-gold/10 text-arena-goldBright',
-    description: 'A disciplined champion with shield-first pressure and the classic arena silhouette.'
+    description: 'A disciplined champion with shield-first pressure and classic arena presence.'
   },
   {
     name: 'Demon Slayer',
     role: 'Burst Duelist',
     art: demonSlayer,
     accent: 'border-arena-bloodGlow/40 bg-arena-blood/10 text-[#ffd4d4]',
-    description: 'Fast, ruthless offense for players who want mobility, pace, and aggressive kill pressure.'
+    description: 'Fast, ruthless offense for players who want mobility and aggressive pressure.'
   },
   {
     name: 'Nightweaver',
     role: 'Nightmare Foe',
     art: nightweaver,
     accent: 'border-sky-400/35 bg-sky-400/10 text-sky-200',
-    description: 'An eerie enemy presence that reinforces the game world beyond standard arena duels.'
-  }
-]
-
-const battlePillars = [
-  {
-    icon: Crown,
-    title: 'Animated Lobbies',
-    text: 'The repo already supports live character preview and polished profile selection flows.'
-  },
-  {
-    icon: Flame,
-    title: 'Cinematic UX',
-    text: 'Damage text, arena HUDs, and dramatic game-over states give the combat loop real ceremony.'
-  },
-  {
-    icon: Sparkles,
-    title: 'Pixel Art Identity',
-    text: 'The landing page now leans into the game assets instead of drifting into generic fantasy styling.'
+    description: 'An eerie presence that reinforces the game world beyond standard duels.'
   }
 ]
 
@@ -86,34 +62,36 @@ export default function Home() {
 
   return (
     <div className="pb-8">
-      <section id="hero" className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(212,160,23,0.22),transparent_26%),radial-gradient(circle_at_80%_14%,rgba(188,26,26,0.18),transparent_22%),linear-gradient(180deg,rgba(26,20,15,0.2),rgba(26,20,15,0.88))]" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-arena-void to-transparent" />
-
-        <div className="section-shell grid min-h-[calc(100vh-5rem)] items-center gap-16 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:py-20">
+      {/* Hero Section */}
+      <section id="hero" className="relative">
+        <div className="section-shell grid min-h-[calc(100vh-5rem)] items-center gap-12 py-14 lg:grid-cols-2 lg:py-20">
+          {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="relative z-10"
+            transition={{ duration: 0.6 }}
           >
-            <p className="mb-4 inline-flex items-center rounded-full border border-arena-gold/30 bg-arena-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-arena-goldBright">
-              Battle Arena Official Site
-            </p>
-            <p className="text-sm uppercase tracking-[0.34em] text-arena-sand">Welcome to the colosseum</p>
-            <h1 className="mt-4 font-display text-5xl uppercase tracking-[0.2em] text-arena-goldBright sm:text-6xl xl:text-7xl">
+            <div className="mb-4 inline-flex rounded-full border border-arena-gold/30 bg-arena-gold/10 px-4 py-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-arena-goldBright">
+                Battle Arena Official
+              </p>
+            </div>
+
+            <h1 className="mt-4 text-5xl font-bold uppercase tracking-wider text-arena-goldBright sm:text-6xl xl:text-7xl">
               Gladiators
             </h1>
-            <p className="mt-4 max-w-2xl text-lg uppercase tracking-[0.18em] text-arena-parchmentSoft sm:text-xl">
+
+            <p className="mt-6 text-lg text-arena-parchmentSoft">
               Battle Arena reborn for the web
             </p>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-arena-sand sm:text-lg">
-              A fast-paced 2D pixel-art fighting game built with C++ and Qt 6. Enter the Battle Arena,
-              choose your class, and fight through a world of blood-red banners, ancient steel, and
-              leaderboard-driven glory.
+
+            <p className="mt-4 max-w-2xl text-base leading-8 text-arena-sand">
+              A fast-paced 2D pixel-art fighting game built with C++ and Qt 6. Enter the arena,
+              choose your class, and fight for glory on the leaderboard.
             </p>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+            {/* CTA Buttons */}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={scrollToTrailer} className="blood-button text-xs">
                 <Flame className="mr-2 h-4 w-4" />
                 Enter the Arena
@@ -124,226 +102,199 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-10 rounded-[28px] border border-arena-bronzeLight/30 bg-black/20 p-5 backdrop-blur-sm sm:p-6">
-              <p className="text-xs uppercase tracking-[0.22em] text-arena-sand">Arena Oath</p>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-arena-parchment">
-                Action-packed combat, fluid mechanics, rich pixel art, and a progression system built to
-                reward every victory earned in the dust of the arena.
-              </p>
-            </div>
-
+            {/* Quick Stats */}
             <div className="mt-12 grid gap-4 sm:grid-cols-3">
-              {heroStats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + index * 0.1 }}
-                  className="rounded-[24px] border border-arena-bronzeLight/30 bg-arena-panel/70 p-5 shadow-gold"
-                >
-                  <p className="text-xs uppercase tracking-[0.18em] text-arena-sand">{stat.label}</p>
-                  <p className="mt-3 text-xl font-semibold text-arena-goldBright">{stat.value}</p>
-                </motion.div>
+              {[
+                { label: 'Heroes Available', value: '9' },
+                { label: 'Arena Mood', value: 'Ancient & Brutal' },
+                { label: 'Built With', value: 'C++ & Qt 6' }
+              ].map((stat) => (
+                <div key={stat.label} className="panel-card p-4">
+                  <p className="text-xs uppercase tracking-wider text-arena-sand">{stat.label}</p>
+                  <p className="mt-2 text-lg font-bold text-arena-goldBright">{stat.value}</p>
+                </div>
               ))}
             </div>
           </motion.div>
 
+          {/* Right Hero Image */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative flex min-h-[34rem] items-center justify-center"
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="relative flex items-center justify-center"
           >
-            <div className="absolute inset-6 rounded-full border border-arena-gold/15" />
-            <div className="absolute inset-10 rounded-full bg-arena-blood/15 blur-3xl" />
-            <div className="absolute h-72 w-72 rounded-full border border-arena-gold/25 bg-arena-gold/10 blur-2xl" />
-            <div className="absolute bottom-5 left-1/2 h-16 w-[78%] -translate-x-1/2 rounded-full bg-black/45 blur-xl" />
+            <div className="relative">
+              {/* Background decorative elements */}
+              <div className="absolute inset-0 rounded-full border border-arena-gold/15 blur-lg" />
 
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute left-0 top-20 hidden w-40 rounded-[28px] border border-arena-bronzeLight/30 bg-arena-panel/90 p-5 shadow-arena sm:block"
-            >
-              <img src={nightweaver} alt="Nightweaver enemy" className="pixelated mx-auto h-28 w-28 object-contain" />
-              <p className="mt-4 text-center text-xs uppercase tracking-[0.18em] text-arena-sand">Nightweaver</p>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="gold-frame relative z-10 w-full max-w-md p-6 sm:p-8"
-            >
-              <div className="rounded-[24px] border border-arena-gold/30 bg-gradient-to-b from-arena-ember via-arena-stone to-arena-void px-6 py-10">
-                <div className="mx-auto mb-5 w-fit rounded-full border border-arena-gold/30 bg-arena-gold/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-arena-goldBright">
-                  Champion spotlight
-                </div>
-                <img src={knight} alt="Knight hero art from Gladiators" className="pixelated mx-auto h-60 object-contain" />
-                <div className="mt-6 text-center">
-                  <p className="text-xs uppercase tracking-[0.18em] text-arena-sand">Featured Champion</p>
-                  <p className="mt-2 font-display text-3xl uppercase tracking-[0.16em] text-arena-goldBright">Knight</p>
+              {/* Main card */}
+              <div className="gold-frame relative z-10 w-full max-w-sm p-6">
+                <div className="rounded-2xl border border-arena-gold/30 bg-gradient-to-b from-arena-ember via-arena-stone to-arena-void px-6 py-10">
+                  <img src={knight} alt="Knight hero" className="pixelated mx-auto h-56 object-contain" />
+                  <div className="mt-6 text-center">
+                    <p className="text-xs uppercase tracking-wider text-arena-sand">Featured Champion</p>
+                    <p className="mt-2 text-3xl font-bold uppercase text-arena-goldBright">Knight</p>
+                  </div>
                 </div>
               </div>
-            </motion.div>
 
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute bottom-0 right-0 hidden w-44 rounded-[28px] border border-arena-bloodGlow/25 bg-arena-blood/10 p-5 shadow-blood sm:block"
-            >
-              <img src={demonSlayer} alt="Demon Slayer hero art" className="pixelated mx-auto h-28 w-28 object-contain" />
-              <p className="mt-4 text-center text-xs uppercase tracking-[0.18em] text-arena-sand">Demon Slayer</p>
-            </motion.div>
+              {/* Floating side cards */}
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="absolute -left-16 top-8 hidden w-32 rounded-lg border border-arena-bronzeLight/30 bg-arena-panel/90 p-3 sm:block"
+              >
+                <img src={nightweaver} alt="Nightweaver" className="pixelated h-24 w-24 mx-auto" />
+                <p className="mt-2 text-center text-xs text-arena-sand uppercase">Nightweaver</p>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, 8, 0] }}
+                transition={{ duration: 3.5, repeat: Infinity }}
+                className="absolute -right-16 bottom-8 hidden w-32 rounded-lg border border-arena-bloodGlow/25 bg-arena-blood/10 p-3 sm:block"
+              >
+                <img src={demonSlayer} alt="Demon Slayer" className="pixelated h-24 w-24 mx-auto" />
+                <p className="mt-2 text-center text-xs text-arena-sand uppercase">Demon Slayer</p>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      <section className="section-shell mt-6">
+      {/* Core Features */}
+      <section className="section-shell mt-12">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
           className="grid gap-4 md:grid-cols-3"
         >
-          {battlePillars.map(({ icon: Icon, title, text }) => (
+          {featureCards.map(({ icon: Icon, title, text }) => (
             <div key={title} className="panel-card p-6">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
+                <div className="rounded-lg border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
                   <Icon className="h-5 w-5" />
                 </div>
-                <p className="font-semibold uppercase tracking-[0.14em] text-arena-parchment">{title}</p>
+                <p className="font-semibold text-arena-parchment">{title}</p>
               </div>
-              <p className="mt-4 text-sm leading-7 text-arena-sand">{text}</p>
+              <p className="mt-3 text-sm leading-6 text-arena-sand">{text}</p>
             </div>
           ))}
         </motion.div>
       </section>
 
+      {/* Trailer Section */}
       <section id="trailer" className="section-shell mt-12">
         <motion.div
-          initial={{ opacity: 0, y: 28 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.6 }}
-          className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]"
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid gap-8 lg:grid-cols-2"
         >
-          <div className="panel-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Battle Vision</p>
-            <h2 className="mt-4 section-title">Arena Trailer</h2>
-            <p className="mt-5 section-copy">
-              The game trailer slot is already staged for launch. Replace the placeholder YouTube ID and
-              the landing page is ready to spotlight the real combat showcase.
+          <div className="panel-card p-8">
+            <p className="text-xs font-semibold uppercase tracking-wider text-arena-sand">Battle Vision</p>
+            <h2 className="mt-4 text-3xl font-bold uppercase text-arena-goldBright">Arena Trailer</h2>
+            <p className="mt-4 text-sm leading-6 text-arena-sand">
+              Watch the game trailer showcasing combat, characters, and the battle arena experience.
             </p>
-            <div className="mt-8 space-y-4">
+
+            <div className="mt-6 space-y-4">
               {featureCards.map(({ icon: Icon, title, text }) => (
-                <div key={title} className="rounded-[24px] border border-arena-bronzeLight/25 bg-arena-void/65 p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-arena-parchment">{title}</p>
-                      <p className="mt-2 text-sm leading-7 text-arena-sand">{text}</p>
-                    </div>
+                <div key={title} className="flex gap-3">
+                  <div className="flex-shrink-0 p-2 rounded-lg border border-arena-gold/35 bg-arena-gold/10 text-arena-goldBright">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-arena-parchment text-sm">{title}</p>
+                    <p className="mt-1 text-xs text-arena-sand">{text}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{ duration: 0.6 }}
-            className="gold-frame overflow-hidden p-4 sm:p-5"
-          >
-            <div className="relative aspect-video overflow-hidden rounded-[24px] border border-arena-gold/25 bg-black">
-              {/* REPLACE WITH REAL TRAILER ID */}
+          <div className="gold-frame overflow-hidden p-4">
+            <div className="aspect-video overflow-hidden rounded-lg border border-arena-gold/25 bg-black">
               <iframe
                 className="h-full w-full"
                 src="https://www.youtube.com/embed/M7lc1UVf-VE?rel=0"
-                title="Gladiators trailer placeholder"
+                title="Gladiators trailer"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 
+      {/* Roster Section */}
       <section className="section-shell mt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.6 }}
-          className="grid gap-6 lg:grid-cols-3"
-        >
-          {rosterCards.map((fighter, index) => (
-            <motion.article
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-arena-sand">Champions</p>
+          <h2 className="mt-2 text-3xl font-bold uppercase text-arena-goldBright">Hero Roster</h2>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {rosterCards.map((fighter, idx) => (
+            <motion.div
               key={fighter.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
-              transition={{ delay: index * 0.08 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
               className="panel-card overflow-hidden p-6"
             >
-              <div className={`status-pill ${fighter.accent}`}>{fighter.role}</div>
-              <div className="mt-5 rounded-[24px] border border-arena-bronzeLight/25 bg-gradient-to-b from-arena-stone/60 to-arena-void/90 px-6 py-8">
+              <div className={`inline-block px-3 py-1 rounded-full border text-xs uppercase font-semibold ${fighter.accent}`}>
+                {fighter.role}
+              </div>
+
+              <div className="mt-4 rounded-lg border border-arena-bronzeLight/25 bg-gradient-to-b from-arena-stone/60 to-arena-void/90 p-6">
                 <img src={fighter.art} alt={fighter.name} className="pixelated mx-auto h-40 object-contain" />
               </div>
-              <h3 className="mt-5 font-display text-3xl uppercase tracking-[0.14em] text-arena-goldBright">
+
+              <h3 className="mt-4 text-2xl font-bold uppercase text-arena-goldBright">
                 {fighter.name}
               </h3>
-              <p className="mt-3 text-sm leading-7 text-arena-sand">{fighter.description}</p>
-            </motion.article>
+              <p className="mt-2 text-sm leading-6 text-arena-sand">{fighter.description}</p>
+            </motion.div>
           ))}
-        </motion.div>
+        </div>
       </section>
 
+      {/* Bottom CTA */}
       <section className="section-shell mt-12">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.6 }}
-          className="panel-card p-6 sm:p-8"
-        >
-          <div className="grid gap-8 lg:grid-cols-[1fr_0.88fr]">
+        <div className="panel-card p-8">
+          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Official Description</p>
-              <h2 className="mt-4 section-title">Fight For Eternal Glory</h2>
-              <p className="mt-5 section-copy">
-                Battle Arena is an action-packed pixel-art experience featuring fluid character animation,
-                responsive menu systems, live class previews, secure player profiles, and a scalable
-                leaderboard-ready progression loop.
+              <p className="text-xs font-semibold uppercase tracking-wider text-arena-sand">Glory Awaits</p>
+              <h2 className="mt-4 text-3xl font-bold uppercase text-arena-goldBright">
+                Fight For Eternal Glory
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-arena-sand">
+                Battle Arena is an action-packed pixel-art experience featuring fluid combat,
+                secure player profiles, and a progression system built to reward every victory
+                in the arena.
               </p>
-              <p className="mt-5 section-copy">
-                This landing page now leans harder into the actual game identity: Roman metals, blood-red
-                accents, real character art, and a presentation that feels closer to the in-game lobby.
-              </p>
+              <button onClick={scrollToTrailer} className="blood-button mt-6 text-xs">
+                <Flame className="mr-2 h-4 w-4" />
+                Watch Trailer
+              </button>
             </div>
 
-            <div className="rounded-[28px] border border-dashed border-arena-gold/35 bg-arena-void/70 p-6 sm:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Future Embed Zone</p>
-              <h3 className="mt-4 font-display text-3xl uppercase tracking-[0.16em] text-arena-goldBright">
-                Playable Build Placeholder
+            <div className="rounded-lg border-2 border-dashed border-arena-gold/35 bg-arena-void/70 p-8 text-center">
+              <Crown className="mx-auto h-12 w-12 text-arena-goldBright opacity-50 mb-3" />
+              <h3 className="text-2xl font-bold uppercase text-arena-goldBright">
+                Ready for Launch
               </h3>
-              <p className="mt-4 text-sm leading-7 text-arena-sand">
-                The actual game will be embedded here later. The structure, CTA flow, and spacing are ready
-                for the live build.
+              <p className="mt-3 text-sm text-arena-sand">
+                The playable game will be embedded here when ready.
               </p>
-              {/* Game will be embedded here later */}
-              <div className="mt-8 rounded-[24px] border border-arena-bronzeLight/25 bg-gradient-to-br from-arena-stone/70 to-arena-ember/90 px-6 py-10 text-center">
-                <p className="font-display text-2xl uppercase tracking-[0.16em] text-arena-gold">Game Portal Ready</p>
-                <p className="mt-3 text-sm text-arena-parchment">
-                  Drop the production game iframe, canvas, or launcher module into this slot.
-                </p>
-              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
     </div>
   )
