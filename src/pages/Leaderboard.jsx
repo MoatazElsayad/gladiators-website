@@ -1,43 +1,122 @@
 import { motion } from 'framer-motion'
-import { Crown, Search, Skull, Swords, Trophy } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Crown, Search, ShieldAlert, Skull, Swords, Trophy } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
+import { fetchJson } from '../lib/api'
 
-const initialLeaderboard = [
-  { rank: 1, gladiator: 'Maximus Aurelius', score: 198450, wins: 126, kills: 584, lastBattle: '18 minutes ago', title: 'Champion of Gold' },
-  { rank: 2, gladiator: 'Spartacus Rex', score: 192130, wins: 121, kills: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains' },
-  { rank: 3, gladiator: 'Cassia Bloodborn', score: 187920, wins: 117, kills: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress' },
-  { rank: 4, gladiator: 'Tiberius Vale', score: 182440, wins: 111, kills: 503, lastBattle: '2 hours ago', title: 'Shield of Marble' },
-  { rank: 5, gladiator: 'Aurelia Vex', score: 176980, wins: 106, kills: 487, lastBattle: '3 hours ago', title: 'Viper of Rome' },
-  { rank: 6, gladiator: 'Draven of Carthage', score: 171620, wins: 101, kills: 459, lastBattle: '5 hours ago', title: 'Ashblade' },
-  { rank: 7, gladiator: 'Lucian Emberhand', score: 165830, wins: 96, kills: 432, lastBattle: 'Today at dawn', title: 'Firecaster' },
-  { rank: 8, gladiator: 'Nyra the Huntress', score: 160410, wins: 92, kills: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn' },
-  { rank: 9, gladiator: 'Valerius Thorn', score: 154970, wins: 88, kills: 389, lastBattle: 'Yesterday', title: 'Arena Whisper' },
-  { rank: 10, gladiator: 'Sabina Ironveil', score: 149680, wins: 84, kills: 366, lastBattle: 'Yesterday', title: 'Bronze Widow' },
-  { rank: 11, gladiator: 'Ragnar Colosseum', score: 143920, wins: 80, kills: 342, lastBattle: '2 days ago', title: 'Northern Roar' },
-  { rank: 12, gladiator: 'Octavia Noctis', score: 138740, wins: 76, kills: 321, lastBattle: '2 days ago', title: 'Moon Fang' },
-  { rank: 13, gladiator: 'Kael Warcrest', score: 133580, wins: 73, kills: 307, lastBattle: '3 days ago', title: 'Broken Standard' },
-  { rank: 14, gladiator: 'Selene Ashspear', score: 128460, wins: 69, kills: 294, lastBattle: '4 days ago', title: 'Silver Hunt' },
-  { rank: 15, gladiator: 'Darius Flint', score: 123210, wins: 65, kills: 276, lastBattle: '5 days ago', title: 'Dust Reaper' }
+const fallbackLeaderboard = [
+  { rank: 1, username: 'Maximus Aurelius', score: 198450, wins: 126, matchesPlayed: 151, lastBattleAt: '2026-04-25T18:00:00Z', title: 'Champion of Gold', characterName: 'Knight' },
+  { rank: 2, username: 'Spartacus Rex', score: 192130, wins: 121, matchesPlayed: 146, lastBattleAt: '2026-04-25T17:36:00Z', title: 'Breaker of Chains', characterName: 'Fantasy Warrior' },
+  { rank: 3, username: 'Cassia Bloodborn', score: 187920, wins: 117, matchesPlayed: 141, lastBattleAt: '2026-04-25T17:00:00Z', title: 'Red Sand Empress', characterName: 'Huntress' },
+  { rank: 4, username: 'Tiberius Vale', score: 182440, wins: 111, matchesPlayed: 136, lastBattleAt: '2026-04-25T16:00:00Z', title: 'Shield of Marble', characterName: 'Knight' },
+  { rank: 5, username: 'Aurelia Vex', score: 176980, wins: 106, matchesPlayed: 130, lastBattleAt: '2026-04-25T15:00:00Z', title: 'Viper of Rome', characterName: 'Demon Slayer' }
 ]
 
 const sortOptions = [
   { key: 'score', label: 'Sort by Score' },
   { key: 'wins', label: 'Sort by Wins' },
-  { key: 'kills', label: 'Sort by Kills' }
+  { key: 'matchesPlayed', label: 'Sort by Matches' }
 ]
+
+function formatLastBattle(value) {
+  if (!value) {
+    return 'No battles yet'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown'
+  }
+
+  const diffMs = Date.now() - date.getTime()
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000))
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays < 7) {
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+  }
+
+  return date.toLocaleDateString()
+}
+
+function normalizeLeaderboardRows(rows) {
+  return (rows || []).map((fighter, index) => ({
+    rank: fighter.rank || index + 1,
+    username: fighter.username || fighter.gladiator || 'Unknown Gladiator',
+    characterName: fighter.characterName || 'Unknown',
+    score: Number(fighter.score || 0),
+    wins: Number(fighter.wins || 0),
+    matchesPlayed: Number(fighter.matchesPlayed || 0),
+    lastBattleAt: fighter.lastBattleAt || null,
+    lastBattle: formatLastBattle(fighter.lastBattleAt),
+    title: fighter.title || fighter.rankLabel || 'Arena Fighter'
+  }))
+}
 
 export default function Leaderboard() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('score')
   const [showEliteOnly, setShowEliteOnly] = useState(false)
+  const [rows, setRows] = useState(() => normalizeLeaderboardRows(fallbackLeaderboard))
+  const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [dataSource, setDataSource] = useState('fallback')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadLeaderboard() {
+      setLoading(true)
+      setErrorMessage('')
+
+      try {
+        const payload = await fetchJson('/api/leaderboard?limit=25')
+        if (cancelled) {
+          return
+        }
+
+        const normalizedRows = normalizeLeaderboardRows(payload.rows)
+        setRows(normalizedRows)
+        setDataSource('live')
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setRows(normalizeLeaderboardRows(fallbackLeaderboard))
+        setDataSource('fallback')
+        setErrorMessage(error.message || 'Could not load the live leaderboard.')
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadLeaderboard()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredFighters = useMemo(() => {
     const normalized = search.trim().toLowerCase()
 
-    let next = initialLeaderboard.filter((fighter) =>
-      fighter.gladiator.toLowerCase().includes(normalized)
-    )
+    let next = rows.filter((fighter) => {
+      const usernameMatch = fighter.username.toLowerCase().includes(normalized)
+      const characterMatch = fighter.characterName.toLowerCase().includes(normalized)
+      return usernameMatch || characterMatch
+    })
 
     if (showEliteOnly) {
       next = next.filter((fighter) => fighter.rank <= 3)
@@ -49,34 +128,35 @@ export default function Leaderboard() {
       ...fighter,
       displayRank: index + 1
     }))
-  }, [search, showEliteOnly, sortBy])
+  }, [rows, search, showEliteOnly, sortBy])
 
   const statCards = useMemo(() => {
-    const highestScore = [...initialLeaderboard].sort((a, b) => b.score - a.score)[0]
-    const mostKills = [...initialLeaderboard].sort((a, b) => b.kills - a.kills)[0]
-    const totalWins = initialLeaderboard.reduce((sum, fighter) => sum + fighter.wins, 0)
+    const sourceRows = rows.length > 0 ? rows : normalizeLeaderboardRows(fallbackLeaderboard)
+    const highestScore = [...sourceRows].sort((a, b) => b.score - a.score)[0]
+    const mostWins = [...sourceRows].sort((a, b) => b.wins - a.wins)[0]
+    const totalMatches = sourceRows.reduce((sum, fighter) => sum + fighter.matchesPlayed, 0)
 
     return [
       {
         icon: Crown,
         label: 'Reigning Champion',
-        value: highestScore.gladiator,
-        subtext: `${highestScore.score.toLocaleString()} score`
+        value: highestScore?.username || 'Waiting for battles',
+        subtext: highestScore ? `${highestScore.score.toLocaleString()} score` : 'No score uploaded yet'
       },
       {
         icon: Skull,
-        label: 'Highest Kill Count',
-        value: mostKills.kills.toLocaleString(),
-        subtext: `${mostKills.gladiator} leads the carnage`
+        label: 'Most Victories',
+        value: mostWins ? mostWins.wins.toLocaleString() : '0',
+        subtext: mostWins ? `${mostWins.username} leads the board` : 'No wins recorded yet'
       },
       {
         icon: Trophy,
-        label: 'Total Wins Logged',
-        value: totalWins.toLocaleString(),
-        subtext: 'across the seeded arena board'
+        label: 'Total Matches Logged',
+        value: totalMatches.toLocaleString(),
+        subtext: dataSource === 'live' ? 'from the connected game backend' : 'from fallback showcase data'
       }
     ]
-  }, [])
+  }, [dataSource, rows])
 
   return (
     <section className="section-shell py-14 sm:py-16">
@@ -90,8 +170,8 @@ export default function Leaderboard() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Hall Of Glory</p>
             <h1 className="mt-4 section-title">Arena Leaderboard</h1>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-arena-sand">
-              Legendary names rise through the ranks below. This board is powered by local demo data today
-              and will be connected to the real backend later.
+              Legendary names rise through the ranks below. This board now reads from the Gladiators backend,
+              and falls back gracefully if the service is offline.
             </p>
           </div>
 
@@ -101,7 +181,7 @@ export default function Leaderboard() {
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search gladiator by name"
+              placeholder="Search gladiator or character"
               className="w-full rounded-full border border-arena-bronzeLight/35 bg-arena-panel/85 py-3 pl-11 pr-4 text-arena-parchment outline-none transition focus:border-arena-gold/65"
             />
           </label>
@@ -148,12 +228,25 @@ export default function Leaderboard() {
             {showEliteOnly ? 'Showing Top 3' : 'Focus Top 3'}
           </button>
           <span className="status-pill border-arena-gold/40 bg-arena-gold/10 text-arena-goldBright">
-            {filteredFighters.length} visible warriors
+            {loading ? 'Loading board...' : `${filteredFighters.length} visible warriors`}
           </span>
-          <span className="status-pill border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]">
-            Backend sync coming soon
+          <span
+            className={`status-pill ${
+              dataSource === 'live'
+                ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
+                : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'
+            }`}
+          >
+            {dataSource === 'live' ? 'Live backend sync' : 'Fallback showcase data'}
           </span>
         </div>
+
+        {errorMessage && (
+          <div className="mt-6 flex items-start gap-3 rounded-3xl border border-[#ffb3b3]/20 bg-[#6f1414]/20 px-5 py-4 text-sm text-[#ffd4d4]">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{errorMessage}</p>
+          </div>
+        )}
 
         <div className="mt-8">
           {filteredFighters.length > 0 ? (

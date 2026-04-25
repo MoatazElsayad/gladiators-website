@@ -13,16 +13,17 @@ export default function LeaderboardTable({ rows }) {
             <tr>
               <th className="px-4 py-4 sm:px-6">Rank</th>
               <th className="px-4 py-4 sm:px-6">Gladiator</th>
+              <th className="px-4 py-4 sm:px-6">Character</th>
               <th className="px-4 py-4 sm:px-6">Score</th>
               <th className="px-4 py-4 sm:px-6">Wins</th>
-              <th className="px-4 py-4 sm:px-6">Kills</th>
+              <th className="px-4 py-4 sm:px-6">Matches</th>
               <th className="px-4 py-4 sm:px-6">Last Battle</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((fighter) => (
               <tr
-                key={fighter.gladiator}
+                key={`${fighter.username}-${fighter.displayRank || fighter.rank}`}
                 className={`border-t border-arena-bronzeLight/20 transition hover:bg-arena-gold/5 ${
                   rankStyles[fighter.displayRank || fighter.rank] || ''
                 }`}
@@ -33,14 +34,15 @@ export default function LeaderboardTable({ rows }) {
                   </span>
                 </td>
                 <td className="px-4 py-4 sm:px-6">
-                  <p className="font-semibold text-arena-parchment">{fighter.gladiator}</p>
+                  <p className="font-semibold text-arena-parchment">{fighter.username}</p>
                   {fighter.title && <p className="mt-1 text-xs uppercase tracking-[0.16em] text-arena-sand">{fighter.title}</p>}
                 </td>
+                <td className="px-4 py-4 text-arena-sand sm:px-6">{fighter.characterName}</td>
                 <td className="px-4 py-4 font-semibold text-arena-goldBright sm:px-6">
                   {fighter.score.toLocaleString()}
                 </td>
                 <td className="px-4 py-4 sm:px-6">{fighter.wins}</td>
-                <td className="px-4 py-4 sm:px-6">{fighter.kills}</td>
+                <td className="px-4 py-4 sm:px-6">{fighter.matchesPlayed}</td>
                 <td className="px-4 py-4 text-arena-sand sm:px-6">{fighter.lastBattle}</td>
               </tr>
             ))}

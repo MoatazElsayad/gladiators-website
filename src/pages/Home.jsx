@@ -4,14 +4,17 @@ import {
   Crown,
   Flame,
   Shield,
+  ShieldAlert,
   Sparkles,
   Swords,
   Trophy
 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import knight from '../assets/knight.png'
 import demonSlayer from '../assets/demon-slayer.png'
 import nightweaver from '../assets/nightweaver.png'
+import { fetchJson } from '../lib/api'
 
 const featureCards = [
   {
@@ -29,12 +32,6 @@ const featureCards = [
     title: 'Hero Roster',
     text: 'Knight, Demon Slayer, Huntress, Wizard, and more classes step into the same blood-lit world.'
   }
-]
-
-const heroStats = [
-  { label: 'Heroes Available', value: '9' },
-  { label: 'Arena Mood', value: 'Ancient / Brutal' },
-  { label: 'Tech Core', value: 'C++ + Qt 6' }
 ]
 
 const rosterCards = [
@@ -79,7 +76,115 @@ const battlePillars = [
   }
 ]
 
+const fallbackMatches = [
+  {
+    id: 'demo-1',
+    username: 'Maximus Aurelius',
+    mode: 'save_the_king',
+    characterName: 'Knight',
+    enemyName: 'Fire Wizard',
+    victory: true,
+    score: 1840
+  },
+  {
+    id: 'demo-2',
+    username: 'Cassia Bloodborn',
+    mode: 'lan_duel',
+    characterName: 'Huntress',
+    enemyName: 'Linked Rival',
+    victory: false,
+    score: 920
+  },
+  {
+    id: 'demo-3',
+    username: 'Spartacus Rex',
+    mode: 'save_the_king',
+    characterName: 'Fantasy Warrior',
+    enemyName: 'Nightweaver',
+    victory: true,
+    score: 2120
+  }
+]
+
+function formatRelativeBattleTime(value) {
+  if (!value) {
+    return 'Recently'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return 'Recently'
+  }
+
+  const diffMinutes = Math.max(1, Math.floor((Date.now() - date.getTime()) / 60000))
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+}
+
+function normalizeMatchRows(rows) {
+  return (rows || []).map((row, index) => ({
+    id: row.id || `fallback-${index}`,
+    username: row.username || 'Unknown Gladiator',
+    mode: row.mode || 'save_the_king',
+    characterName: row.characterName || row.characterType || 'Unknown',
+    enemyName: row.enemyName || row.opponentUsername || 'Unknown foe',
+    victory: Boolean(row.victory),
+    score: Number(row.score || 0),
+    playedAtLabel: formatRelativeBattleTime(row.playedAt)
+  }))
+}
+
 export default function Home() {
+  const [recentMatches, setRecentMatches] = useState(() => normalizeMatchRows(fallbackMatches))
+  const [recentMatchesSource, setRecentMatchesSource] = useState('fallback')
+  const [recentMatchesError, setRecentMatchesError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadRecentMatches() {
+      try {
+        const payload = await fetchJson('/api/matches/recent?limit=4')
+        if (cancelled) {
+          return
+        }
+
+        const normalized = normalizeMatchRows(payload.rows)
+        setRecentMatches(normalized.length > 0 ? normalized : normalizeMatchRows(fallbackMatches))
+        setRecentMatchesSource(normalized.length > 0 ? 'live' : 'fallback')
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setRecentMatches(normalizeMatchRows(fallbackMatches))
+        setRecentMatchesSource('fallback')
+        setRecentMatchesError(error.message || 'Could not load recent battles.')
+      }
+    }
+
+    loadRecentMatches()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const heroStats = useMemo(() => [
+    { label: 'Heroes Available', value: '9' },
+    { label: 'Arena Mood', value: 'Ancient / Brutal' },
+    { label: 'Backend Sync', value: recentMatchesSource === 'live' ? 'Connected' : 'Fallback' }
+  ], [recentMatchesSource])
+
   const scrollToTrailer = () => {
     document.getElementById('trailer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -219,6 +324,62 @@ export default function Home() {
         </motion.div>
       </section>
 
+      <section className="section-shell mt-12">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.6 }}
+          className="panel-card p-6 sm:p-8"
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Live Arena Feed</p>
+              <h2 className="mt-4 section-title">Recent Battles</h2>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-arena-sand">
+                This section reads the latest uploaded match results from the desktop game backend.
+              </p>
+            </div>
+            <div className={`status-pill ${recentMatchesSource === 'live'
+              ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
+              : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'}`}>
+              {recentMatchesSource === 'live' ? 'Live recent matches' : 'Fallback recent matches'}
+            </div>
+          </div>
+
+          {recentMatchesError && (
+            <div className="mt-6 flex items-start gap-3 rounded-3xl border border-[#ffb3b3]/20 bg-[#6f1414]/20 px-5 py-4 text-sm text-[#ffd4d4]">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{recentMatchesError}</p>
+            </div>
+          )}
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            {recentMatches.map((match) => (
+              <div key={match.id} className="rounded-[24px] border border-arena-bronzeLight/25 bg-arena-void/65 p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="font-semibold text-arena-parchment">{match.username}</p>
+                  <span className={`status-pill ${match.victory
+                    ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
+                    : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'}`}>
+                    {match.victory ? 'Victory' : 'Defeat'}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-arena-sand">
+                  {match.characterName} entered {match.mode === 'lan_duel' ? 'Arena Link' : 'Save the King'} against{' '}
+                  <span className="text-arena-parchment">{match.enemyName}</span>.
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.16em] text-arena-sand">
+                  <span>Score {match.score.toLocaleString()}</span>
+                  <span>•</span>
+                  <span>{match.playedAtLabel}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
       <section id="trailer" className="section-shell mt-12">
         <motion.div
           initial={{ opacity: 0, y: 28 }}
@@ -259,7 +420,6 @@ export default function Home() {
             className="gold-frame overflow-hidden p-4 sm:p-5"
           >
             <div className="relative aspect-video overflow-hidden rounded-[24px] border border-arena-gold/25 bg-black">
-              {/* REPLACE WITH REAL TRAILER ID */}
               <iframe
                 className="h-full w-full"
                 src="https://www.youtube.com/embed/M7lc1UVf-VE?rel=0"
@@ -334,7 +494,6 @@ export default function Home() {
                 The actual game will be embedded here later. The structure, CTA flow, and spacing are ready
                 for the live build.
               </p>
-              {/* Game will be embedded here later */}
               <div className="mt-8 rounded-[24px] border border-arena-bronzeLight/25 bg-gradient-to-br from-arena-stone/70 to-arena-ember/90 px-6 py-10 text-center">
                 <p className="font-display text-2xl uppercase tracking-[0.16em] text-arena-gold">Game Portal Ready</p>
                 <p className="mt-3 text-sm text-arena-parchment">
