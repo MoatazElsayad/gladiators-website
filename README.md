@@ -47,6 +47,35 @@ npm run build
 npm run preview
 ```
 
+## Vercel Leaderboard Backend
+
+The deployed site now expects real Vercel API routes under `/api/*`.
+
+For a live leaderboard on Vercel:
+
+1. Connect a hosted Postgres database to the Vercel project.
+2. Set `DATABASE_URL` in the Vercel project environment.
+3. Optionally set `GAME_UPLOAD_API_KEY` if you want desktop uploads protected.
+4. Redeploy the site.
+
+The game client can then post battle results to:
+
+```text
+https://your-site.vercel.app/api/game-results
+```
+
+In the desktop game, point:
+
+- `GLADIATORS_WEB_API_URL` to `https://your-site.vercel.app`
+- `GLADIATORS_WEB_API_KEY` to the same secret value as `GAME_UPLOAD_API_KEY` if upload protection is enabled
+
+The leaderboard and recent-battles pages will read from the same deployment:
+
+```text
+https://your-site.vercel.app/api/leaderboard
+https://your-site.vercel.app/api/matches/recent
+```
+
 ## Lint
 
 ```bash

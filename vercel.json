@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/players/:username",
+      "destination": "/api/player-profile?username=:username"
+    }
+  ]
+}
