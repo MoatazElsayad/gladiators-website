@@ -1,354 +1,218 @@
 import { motion } from 'framer-motion'
-import { Crown, Search, ShieldAlert, ShieldCheck, Skull, Sparkles, Swords, Trophy } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Crown, Search, Zap, Swords, ShieldAlert, Sparkles } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
-import { fetchJson } from '../lib/api'
 
 const fallbackLeaderboard = [
-  { rank: 1, username: 'Maximus Aurelius', score: 198450, wins: 126, matchesPlayed: 151, lastBattleAt: '2026-04-25T18:00:00Z', title: 'Champion of Gold', characterName: 'Knight' },
-  { rank: 2, username: 'Spartacus Rex', score: 192130, wins: 121, matchesPlayed: 146, lastBattleAt: '2026-04-25T17:36:00Z', title: 'Breaker of Chains', characterName: 'Fantasy Warrior' },
-  { rank: 3, username: 'Cassia Bloodborn', score: 187920, wins: 117, matchesPlayed: 141, lastBattleAt: '2026-04-25T17:00:00Z', title: 'Red Sand Empress', characterName: 'Huntress' },
-  { rank: 4, username: 'Tiberius Vale', score: 182440, wins: 111, matchesPlayed: 136, lastBattleAt: '2026-04-25T16:00:00Z', title: 'Shield of Marble', characterName: 'Knight' },
-  { rank: 5, username: 'Aurelia Vex', score: 176980, wins: 106, matchesPlayed: 130, lastBattleAt: '2026-04-25T15:00:00Z', title: 'Viper of Rome', characterName: 'Demon Slayer' }
+  { rank: 1, gladiator: 'MOA_taz', score: 1890, wins: 6, kills: 584, lastBattle: '18 minutes ago', title: 'Arcen', class: 'Warrior' },
+  { rank: 2, gladiator: 'Spartacus Rex', score: 1821, wins: 5, kills: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains', class: 'Fighter' },
+  { rank: 3, gladiator: 'Cassia Bloodborn', score: 1779, wins: 5, kills: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress', class: 'Rogue' },
+  { rank: 4, gladiator: 'Tiberius Vale', score: 1824, wins: 4, kills: 503, lastBattle: '2 hours ago', title: 'Shield of Marble', class: 'Knight' },
+  { rank: 5, gladiator: 'Aurelia Vex', score: 1770, wins: 4, kills: 487, lastBattle: '3 hours ago', title: 'Viper of Rome', class: 'Assassin' },
+  { rank: 6, gladiator: 'Draven of Carthage', score: 1716, wins: 3, kills: 459, lastBattle: '5 hours ago', title: 'Ashblade', class: 'Pyromancer' },
+  { rank: 7, gladiator: 'Lucian Emberhand', score: 1658, wins: 3, kills: 432, lastBattle: 'Today at dawn', title: 'Firecaster', class: 'Wizard' },
+  { rank: 8, gladiator: 'Nyra the Huntress', score: 1604, wins: 2, kills: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn', class: 'Ranger' },
+  { rank: 9, gladiator: 'Valerius Thorn', score: 1550, wins: 2, kills: 389, lastBattle: 'Yesterday', title: 'Arena Whisper', class: 'Monk' },
+  { rank: 10, gladiator: 'Sabina Ironveil', score: 1497, wins: 2, kills: 366, lastBattle: 'Yesterday', title: 'Bronze Widow', class: 'Paladin' },
+  { rank: 11, gladiator: 'Ragnar Colosseum', score: 1439, wins: 1, kills: 342, lastBattle: '2 days ago', title: 'Northern Roar', class: 'Barbarian' },
+  { rank: 12, gladiator: 'Octavia Noctis', score: 1387, wins: 1, kills: 321, lastBattle: '2 days ago', title: 'Moon Fang', class: 'Shadowblade' },
+  { rank: 13, gladiator: 'Kael Warcrest', score: 1336, wins: 1, kills: 307, lastBattle: '3 days ago', title: 'Broken Standard', class: 'Warlord' },
+  { rank: 14, gladiator: 'Selene Ashspear', score: 1285, wins: 1, kills: 294, lastBattle: '4 days ago', title: 'Silver Hunt', class: 'Huntress' },
+  { rank: 15, gladiator: 'Darius Flint', score: 1232, wins: 0, kills: 276, lastBattle: '5 days ago', title: 'Dust Reaper', class: 'Gunner' }
 ]
-
-const sortOptions = [
-  { key: 'score', label: 'Sort by Score' },
-  { key: 'wins', label: 'Sort by Wins' },
-  { key: 'matchesPlayed', label: 'Sort by Matches' }
-]
-
-const fallbackNormalizedRows = normalizeLeaderboardRows(fallbackLeaderboard)
-
-function formatLastBattle(value) {
-  if (!value) {
-    return 'No battles yet'
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return 'Unknown'
-  }
-
-  const diffMs = Date.now() - date.getTime()
-  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000))
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) {
-    return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
-  }
-
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays < 7) {
-    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-  }
-
-  return date.toLocaleDateString()
-}
-
-function normalizeLeaderboardRows(rows) {
-  return (rows || []).map((fighter, index) => ({
-    rank: fighter.rank || index + 1,
-    username: fighter.username || fighter.gladiator || 'Unknown Gladiator',
-    characterName: fighter.characterName || 'Unknown',
-    score: Number(fighter.score || 0),
-    wins: Number(fighter.wins || 0),
-    matchesPlayed: Number(fighter.matchesPlayed || 0),
-    lastBattleAt: fighter.lastBattleAt || null,
-    lastBattle: formatLastBattle(fighter.lastBattleAt),
-    title: fighter.title || fighter.rankLabel || 'Arena Fighter'
-  }))
-}
 
 export default function Leaderboard() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('score')
-  const [showEliteOnly, setShowEliteOnly] = useState(false)
-  const [rows, setRows] = useState(() => normalizeLeaderboardRows(fallbackLeaderboard))
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [dataSource, setDataSource] = useState('fallback')
-  const logoPath = `${import.meta.env.BASE_URL}brand/logo.png`
-  const shieldPath = `${import.meta.env.BASE_URL}brand/shield.png`
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadLeaderboard() {
-      setLoading(true)
-      setErrorMessage('')
-
-      try {
-        const payload = await fetchJson('/api/leaderboard?limit=25')
-        if (cancelled) {
-          return
-        }
-
-        const normalizedRows = normalizeLeaderboardRows(payload.rows)
-        setRows(normalizedRows)
-        setDataSource('live')
-      } catch (error) {
-        if (cancelled) {
-          return
-        }
-
-        setRows(normalizeLeaderboardRows(fallbackLeaderboard))
-        setDataSource('fallback')
-        setErrorMessage(error.message || 'Could not load the live leaderboard.')
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    loadLeaderboard()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const [showTop3, setShowTop3] = useState(false)
 
   const filteredFighters = useMemo(() => {
     const normalized = search.trim().toLowerCase()
 
-    let next = rows.filter((fighter) => {
-      const usernameMatch = fighter.username.toLowerCase().includes(normalized)
-      const characterMatch = fighter.characterName.toLowerCase().includes(normalized)
-      return usernameMatch || characterMatch
-    })
+    let results = fallbackLeaderboard.filter((fighter) =>
+      fighter.gladiator.toLowerCase().includes(normalized) ||
+      fighter.class.toLowerCase().includes(normalized)
+    )
 
-    if (showEliteOnly) {
-      next = next.filter((fighter) => fighter.rank <= 3)
+    if (showTop3) {
+      results = results.filter((fighter) => fighter.rank <= 3)
     }
 
-    next = [...next].sort((a, b) => b[sortBy] - a[sortBy])
+    results = [...results].sort((a, b) => {
+      if (sortBy === 'score') return b.score - a.score
+      if (sortBy === 'wins') return b.wins - a.wins
+      if (sortBy === 'kills') return b.kills - a.kills
+      return 0
+    })
 
-    return next.map((fighter, index) => ({
+    return results.map((fighter, index) => ({
       ...fighter,
       displayRank: index + 1
     }))
-  }, [rows, search, showEliteOnly, sortBy])
+  }, [search, showTop3, sortBy])
 
-  const hasLiveRows = dataSource === 'live' && rows.length > 0
-  const isLiveEmpty = dataSource === 'live' && rows.length === 0
-
-  const statCards = useMemo(() => {
-    const sourceRows = rows.length > 0
-      ? rows
-      : dataSource === 'fallback'
-        ? fallbackNormalizedRows
-        : []
-    const highestScore = [...sourceRows].sort((a, b) => b.score - a.score)[0]
-    const mostWins = [...sourceRows].sort((a, b) => b.wins - a.wins)[0]
-    const totalMatches = sourceRows.reduce((sum, fighter) => sum + fighter.matchesPlayed, 0)
-
-    return [
-      {
-        icon: Crown,
-        label: 'Reigning Champion',
-        value: highestScore?.username || 'Waiting for battles',
-        subtext: highestScore ? `${highestScore.score.toLocaleString()} score` : 'No live score uploaded yet'
-      },
-      {
-        icon: Skull,
-        label: 'Most Victories',
-        value: mostWins ? mostWins.wins.toLocaleString() : '0',
-        subtext: mostWins ? `${mostWins.username} leads the board` : 'No wins recorded yet'
-      },
-      {
-        icon: Trophy,
-        label: 'Total Matches Logged',
-        value: totalMatches.toLocaleString(),
-        subtext: dataSource === 'live' ? 'from the connected game backend' : 'from fallback showcase data'
-      }
-    ]
-  }, [dataSource, rows])
-
-  const podiumFighters = useMemo(() => {
-    const sourceRows = filteredFighters.length > 0 ? filteredFighters : rows
-    return sourceRows.slice(0, 3)
-  }, [filteredFighters, rows])
+  const champion = fallbackLeaderboard[0]
+  const mostVictories = [...fallbackLeaderboard].sort((a, b) => b.wins - a.wins)[0]
+  const totalMatches = fallbackLeaderboard.reduce((sum, f) => sum + f.wins, 0)
 
   return (
-    <section className="section-shell py-14 sm:py-16">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="panel-card relative overflow-hidden p-7 sm:p-8">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,160,23,0.14),transparent_32%),linear-gradient(135deg,rgba(92,64,51,0.2),transparent_50%)]" />
-            <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-arena-gold/25 bg-arena-gold/10 shadow-gold">
-                <img src={shieldPath} alt="Gladiators shield icon" className="h-14 w-14 object-contain" />
+    <section className="section-shell py-12 sm:py-16">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        {/* Header Section - Left & Right Layout */}
+        <div className="grid gap-8 lg:grid-cols-2 mb-12">
+          {/* Left: Title & Description */}
+          <div className="panel-card p-8">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full border-2 border-arena-gold/40 bg-arena-gold/10 p-4 flex-shrink-0">
+                <Crown className="h-8 w-8 text-arena-goldBright" />
               </div>
-              <div className="min-w-0">
-                <img src={logoPath} alt="Gladiators logo" className="h-12 w-auto sm:h-14" />
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-arena-sand">Hall of Glory</p>
-                <h1 className="mt-2 font-display text-3xl uppercase tracking-[0.16em] text-arena-goldBright sm:text-4xl">
-                  Arena Leaderboard
-                </h1>
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-arena-sand">
-                  Clear, live, and built around the real game. This board tracks uploaded battle results,
-                  highlights the strongest gladiators, and keeps the arena history easy to scan.
+              <div>
+                <p className="text-xs uppercase tracking-widest text-arena-sand">Hall of Glory</p>
+                <h1 className="mt-2 text-4xl font-bold uppercase text-arena-goldBright">Arena Leaderboard</h1>
+                <p className="mt-4 text-sm leading-6 text-arena-sand">
+                  Clear, live, and built around the real game. This board tracks uploaded battle results, highlights the strongest gladiators, and keeps the arena history easy to scan.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="panel-card p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Find a Warrior</p>
-            <label className="relative mt-4 block">
+          {/* Right: Search & Filters */}
+          <div className="panel-card p-8">
+            <p className="text-xs uppercase tracking-widest text-arena-sand mb-4">Find a Warrior</p>
+
+            <label className="relative block mb-6">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-arena-gold" />
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search gladiator or character"
-                className="w-full rounded-full border border-arena-bronzeLight/35 bg-arena-panel/85 py-3 pl-11 pr-4 text-arena-parchment outline-none transition focus:border-arena-gold/65"
+                className="w-full rounded-lg border border-arena-bronzeLight/35 bg-arena-stone/40 py-3 pl-11 pr-4 text-arena-parchment placeholder-arena-sand/60 outline-none transition focus:border-arena-gold/65"
               />
             </label>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <span className="status-pill border-arena-gold/40 bg-arena-gold/10 text-arena-goldBright">
-                {loading ? 'Loading board...' : `${filteredFighters.length} visible warriors`}
-              </span>
-              <span
-                className={`status-pill ${
-                  dataSource === 'live'
-                    ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
-                    : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowTop3(!showTop3)}
+                className={`px-4 py-2 rounded text-xs uppercase font-semibold tracking-wider transition border ${
+                  showTop3
+                    ? 'border-arena-gold/60 bg-arena-gold/15 text-arena-goldBright'
+                    : 'border-arena-bronzeLight/35 bg-arena-stone/40 text-arena-parchment hover:border-arena-gold/45'
                 }`}
               >
-                {dataSource === 'live' ? 'Live backend sync' : 'Fallback showcase data'}
-              </span>
+                {showTop3 ? '✓ 1 Visible Warriors' : '1 Visible Warriors'}
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded text-xs uppercase font-semibold tracking-wider border border-arena-bronzeLight/35 bg-arena-stone/40 text-arena-parchment hover:border-arena-gold/45 transition"
+              >
+                Live Backend Sync
+              </button>
             </div>
-            <p className="mt-5 text-sm leading-7 text-arena-sand">
-              Use the controls below to focus on the strongest three warriors or reorder the table by score,
-              victories, or match count.
-            </p>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {statCards.map(({ icon: Icon, label, value, subtext }) => (
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3 mb-12">
+          {[
+            { icon: Crown, label: 'Reigning Champion', value: champion.gladiator, subtext: `${champion.score} score` },
+            { icon: Zap, label: 'Most Victories', value: mostVictories.wins, subtext: `${mostVictories.gladiator} leads the board` },
+            { icon: Swords, label: 'Total Matches Logged', value: totalMatches, subtext: 'from the connected game backend' }
+          ].map(({ icon: Icon, label, value, subtext }) => (
             <div key={label} className="panel-card p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-[0.18em] text-arena-sand">{label}</p>
-                <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
-                  <Icon className="h-4 w-4" />
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-full border border-arena-gold/40 bg-arena-gold/10 p-3">
+                  <Icon className="h-5 w-5 text-arena-goldBright" />
                 </div>
+                <p className="text-xs uppercase tracking-wider text-arena-sand">{label}</p>
               </div>
-              <p className="mt-5 font-display text-3xl uppercase tracking-[0.12em] text-arena-goldBright">
-                {value}
-              </p>
-              <p className="mt-3 text-sm text-arena-sand">{subtext}</p>
+              <p className="text-3xl font-bold text-arena-goldBright">{value}</p>
+              <p className="mt-2 text-xs text-arena-sand">{subtext}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        {/* Champion Watch & Top Player */}
+        <div className="grid gap-6 lg:grid-cols-2 mb-12">
+          {/* Champion Watch */}
           <div className="panel-card p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
-                <ShieldCheck className="h-5 w-5" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-full border border-arena-gold/40 bg-arena-gold/10 p-3">
+                <Crown className="h-5 w-5 text-arena-goldBright" />
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-arena-sand">Champion Watch</p>
-                <p className="mt-1 text-lg font-semibold text-arena-parchment">
-                  {podiumFighters[0]?.username || 'No champion recorded yet'}
-                </p>
-              </div>
+              <p className="text-xs uppercase tracking-wider text-arena-sand">Champion Watch</p>
             </div>
-            <p className="mt-4 text-sm leading-7 text-arena-sand">
-              {podiumFighters[0]
-                ? `${podiumFighters[0].username} is currently leading with ${podiumFighters[0].score.toLocaleString()} score and ${podiumFighters[0].wins} wins.`
-                : 'The production board is ready. As soon as the game uploads real battles, the top champion will appear here.'}
+            <h3 className="text-2xl font-bold text-arena-parchment">{champion.gladiator}</h3>
+            <p className="mt-3 text-sm text-arena-sand">
+              {champion.gladiator} is currently leading with {champion.score} score and {champion.wins} wins.
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            {podiumFighters.map((fighter, index) => (
-              <div key={fighter.username} className="panel-card flex items-center gap-4 p-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-arena-gold/35 bg-arena-gold/10 text-sm font-semibold text-arena-goldBright">
-                  #{index + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-arena-parchment">{fighter.username}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-arena-sand">
-                    {fighter.characterName} • {fighter.score.toLocaleString()} score
-                  </p>
-                </div>
+          {/* Top Player Spotlight */}
+          <div className="gold-frame p-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full border-2 border-arena-gold/40 bg-arena-gold/15 h-16 w-16 flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl font-bold text-arena-goldBright">#{champion.rank}</span>
               </div>
-            ))}
-            {podiumFighters.length === 0 && (
-              <div className="panel-card flex items-center gap-4 p-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-arena-bronzeLight/35 bg-arena-panel/80 text-arena-sand">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <p className="text-sm leading-7 text-arena-sand">The podium will fill automatically once live battles are uploaded.</p>
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-wider text-arena-sand mb-1">{champion.class}</p>
+                <h3 className="text-2xl font-bold text-arena-goldBright">{champion.gladiator}</h3>
+                <p className="mt-2 text-sm text-arena-sand">{champion.score} score</p>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
-          {sortOptions.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setSortBy(option.key)}
-              className={`ghost-button ${
-                sortBy === option.key ? 'border-arena-gold/55 bg-arena-gold/12 text-arena-goldBright' : ''
-              }`}
-            >
-              <Swords className="mr-2 h-3.5 w-3.5" />
-              {option.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowEliteOnly((current) => !current)}
-            className={`ghost-button ${
-              showEliteOnly ? 'border-arena-bloodGlow/55 bg-arena-blood/12 text-[#ffd4d4]' : ''
-            }`}
-          >
-            {showEliteOnly ? 'Showing Top 3' : 'Focus Top 3'}
-          </button>
-        </div>
-
-        {errorMessage && (
-          <div className="mt-6 flex items-start gap-3 rounded-3xl border border-[#ffb3b3]/20 bg-[#6f1414]/20 px-5 py-4 text-sm text-[#ffd4d4]">
-            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>{errorMessage}</p>
-          </div>
-        )}
-
-        <div className="mt-8">
+        {/* Leaderboard Table */}
+        <div className="mb-12">
           {filteredFighters.length > 0 ? (
             <LeaderboardTable rows={filteredFighters} />
           ) : (
-            <div className="panel-card p-10">
-              <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border border-arena-gold/25 bg-arena-gold/10 shadow-gold">
-                  <img src={shieldPath} alt="Gladiators shield icon" className="h-14 w-14 object-contain" />
-                </div>
-                <p className="mt-6 font-display text-2xl uppercase tracking-[0.14em] text-arena-goldBright">
-                  {isLiveEmpty ? 'No Live Arena Records Yet' : 'No Matching Gladiators'}
-                </p>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-arena-sand">
-                  {isLiveEmpty
-                    ? 'The leaderboard connection is working, but no battle results have been uploaded yet. Finish one battle in the game and sync it to the website to populate this board.'
-                    : 'No gladiators matched that search. Try another name, clear the search box, or turn off the top-three focus filter.'}
-                </p>
-              </div>
+            <div className="panel-card p-10 text-center text-arena-sand">
+              No gladiators match your search. Try a different name or character class.
             </div>
           )}
+        </div>
+
+        {/* Sort Controls */}
+        <div className="flex flex-wrap gap-3 justify-center">
+          <button
+            type="button"
+            onClick={() => setSortBy('score')}
+            className={`px-6 py-3 rounded text-xs uppercase font-bold tracking-wider transition border flex items-center gap-2 ${
+              sortBy === 'score'
+                ? 'border-arena-gold/60 bg-arena-gold/15 text-arena-goldBright'
+                : 'border-arena-bronzeLight/35 bg-arena-stone/40 text-arena-parchment hover:border-arena-gold/45'
+            }`}
+          >
+            <Swords className="h-4 w-4" />
+            Sort by Score
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortBy('wins')}
+            className={`px-6 py-3 rounded text-xs uppercase font-bold tracking-wider transition border flex items-center gap-2 ${
+              sortBy === 'wins'
+                ? 'border-arena-gold/60 bg-arena-gold/15 text-arena-goldBright'
+                : 'border-arena-bronzeLight/35 bg-arena-stone/40 text-arena-parchment hover:border-arena-gold/45'
+            }`}
+          >
+            <Zap className="h-4 w-4" />
+            Sort by Wins
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortBy('kills')}
+            className={`px-6 py-3 rounded text-xs uppercase font-bold tracking-wider transition border flex items-center gap-2 ${
+              sortBy === 'kills'
+                ? 'border-arena-gold/60 bg-arena-gold/15 text-arena-goldBright'
+                : 'border-arena-bronzeLight/35 bg-arena-stone/40 text-arena-parchment hover:border-arena-gold/45'
+            }`}
+          >
+            <Crown className="h-4 w-4" />
+            Sort by Matches
+          </button>
         </div>
       </motion.div>
     </section>
