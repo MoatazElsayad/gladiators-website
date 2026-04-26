@@ -15,11 +15,22 @@ const socialLinks = [
 ]
 
 export default function Footer() {
+  const logoPath = `${import.meta.env.BASE_URL}brand/logo.png`
+  const shieldPath = `${import.meta.env.BASE_URL}brand/shield.png`
+
   return (
     <footer className="relative z-10 mt-20 border-t border-arena-bronzeLight/30 bg-arena-void/90">
       <div className="section-shell flex flex-col gap-8 py-10 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-xl">
-          <p className="font-display text-2xl uppercase tracking-[0.18em] text-arena-gold">Gladiators</p>
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-arena-gold/30 bg-arena-gold/10 shadow-gold">
+              <img src={shieldPath} alt="Gladiators shield icon" className="h-9 w-9 object-contain" />
+            </div>
+            <div>
+              <img src={logoPath} alt="Gladiators logo" className="h-9 w-auto" />
+              <p className="mt-1 text-[11px] uppercase tracking-[0.24em] text-arena-sand">Battle Arena</p>
+            </div>
+          </div>
           <p className="mt-3 text-sm leading-7 text-arena-sand">
             The official Battle Arena landing page. Made with blood and steel in Cairo.
           </p>

@@ -21,7 +21,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const location = useLocation()
-  const logoPath = `${import.meta.env.BASE_URL}logo.svg`
+  const logoPath = `${import.meta.env.BASE_URL}brand/logo.png`
+  const shieldPath = `${import.meta.env.BASE_URL}brand/shield.png`
 
   useEffect(() => {
     setMobileOpen(false)
@@ -45,16 +46,21 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-arena-bronzeLight/30 bg-arena-void/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-arena-bronzeLight/30 bg-[linear-gradient(180deg,rgba(18,13,10,0.95),rgba(26,20,15,0.86))] backdrop-blur-xl">
         <div className="section-shell flex h-20 items-center justify-between">
           <NavLink to="/" className="flex items-center gap-3">
-            <img src={logoPath} alt="Gladiators logo" className="h-12 w-auto sm:h-14" />
-            <div className="hidden sm:block">
-              <p className="font-display text-lg uppercase tracking-[0.18em] text-arena-goldBright">
-                Gladiators
-              </p>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-arena-sand">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-arena-gold/30 bg-arena-gold/10 shadow-gold">
+              <img src={shieldPath} alt="Gladiators shield icon" className="h-8 w-8 object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <img src={logoPath} alt="Gladiators logo" className="h-7 w-auto sm:h-8" />
+              <p className="hidden text-[11px] uppercase tracking-[0.28em] text-arena-sand sm:block">
                 Battle Arena
+              </p>
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-[11px] uppercase tracking-[0.24em] text-arena-sand">
+                Official Website
               </p>
             </div>
           </NavLink>
