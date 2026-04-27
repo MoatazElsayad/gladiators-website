@@ -4,21 +4,21 @@ import { useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
 
 const fallbackLeaderboard = [
-  { rank: 1, username: 'ShadowKnight92', score: 1890, wins: 6, matchesPlayed: 584, lastBattle: '18 minutes ago', title: 'Arcen', characterName: 'Warrior' },
-  { rank: 2, username: 'IronShield', score: 1824, wins: 4, matchesPlayed: 503, lastBattle: '2 hours ago', title: 'Shield of Marble', characterName: 'Knight' },
-  { rank: 3, username: 'ChainBreaker_', score: 1821, wins: 5, matchesPlayed: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains', characterName: 'Fighter' },
-  { rank: 4, username: 'SandEmpress', score: 1779, wins: 5, matchesPlayed: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress', characterName: 'Rogue' },
-  { rank: 5, username: 'ViperRome', score: 1770, wins: 4, matchesPlayed: 487, lastBattle: '3 hours ago', title: 'Viper of Rome', characterName: 'Assassin' },
-  { rank: 6, username: 'AshBladeMaster', score: 1716, wins: 3, matchesPlayed: 459, lastBattle: '5 hours ago', title: 'Ashblade', characterName: 'Pyromancer' },
-  { rank: 7, username: 'FireCaster_Pro', score: 1658, wins: 3, matchesPlayed: 432, lastBattle: 'Today at dawn', title: 'Firecaster', characterName: 'Wizard' },
-  { rank: 8, username: 'HuntressSpear', score: 1604, wins: 2, matchesPlayed: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn', characterName: 'Ranger' },
-  { rank: 9, username: 'ArenaWhisper', score: 1550, wins: 2, matchesPlayed: 389, lastBattle: 'Yesterday', title: 'Arena Whisper', characterName: 'Monk' },
-  { rank: 10, username: 'BronzeWidow', score: 1497, wins: 2, matchesPlayed: 366, lastBattle: 'Yesterday', title: 'Bronze Widow', characterName: 'Paladin' },
-  { rank: 11, username: 'NorthernRoar', score: 1439, wins: 1, matchesPlayed: 342, lastBattle: '2 days ago', title: 'Northern Roar', characterName: 'Barbarian' },
-  { rank: 12, username: 'MoonFang', score: 1387, wins: 1, matchesPlayed: 321, lastBattle: '2 days ago', title: 'Moon Fang', characterName: 'Shadowblade' },
-  { rank: 13, username: 'WarlordKael', score: 1336, wins: 1, matchesPlayed: 307, lastBattle: '3 days ago', title: 'Broken Standard', characterName: 'Warlord' },
-  { rank: 14, username: 'SilverHunt', score: 1285, wins: 1, matchesPlayed: 294, lastBattle: '4 days ago', title: 'Silver Hunt', characterName: 'Huntress' },
-  { rank: 15, username: 'DustReaper', score: 1232, wins: 0, matchesPlayed: 276, lastBattle: '5 days ago', title: 'Dust Reaper', characterName: 'Gunner' }
+  { rank: 1, username: 'MOA_taz', score: 1890, wins: 6, matchesPlayed: 584, lastBattle: '18 minutes ago', title: 'Arcen', characterName: 'Warrior' },
+  { rank: 2, username: 'Spartacus Rex', score: 1821, wins: 5, matchesPlayed: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains', characterName: 'Fighter' },
+  { rank: 3, username: 'Cassia Bloodborn', score: 1779, wins: 5, matchesPlayed: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress', characterName: 'Rogue' },
+  { rank: 4, username: 'Tiberius Vale', score: 1824, wins: 4, matchesPlayed: 503, lastBattle: '2 hours ago', title: 'Shield of Marble', characterName: 'Knight' },
+  { rank: 5, username: 'Aurelia Vex', score: 1770, wins: 4, matchesPlayed: 487, lastBattle: '3 hours ago', title: 'Viper of Rome', characterName: 'Assassin' },
+  { rank: 6, username: 'Draven of Carthage', score: 1716, wins: 3, matchesPlayed: 459, lastBattle: '5 hours ago', title: 'Ashblade', characterName: 'Pyromancer' },
+  { rank: 7, username: 'Lucian Emberhand', score: 1658, wins: 3, matchesPlayed: 432, lastBattle: 'Today at dawn', title: 'Firecaster', characterName: 'Wizard' },
+  { rank: 8, username: 'Nyra the Huntress', score: 1604, wins: 2, matchesPlayed: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn', characterName: 'Ranger' },
+  { rank: 9, username: 'Valerius Thorn', score: 1550, wins: 2, matchesPlayed: 389, lastBattle: 'Yesterday', title: 'Arena Whisper', characterName: 'Monk' },
+  { rank: 10, username: 'Sabina Ironveil', score: 1497, wins: 2, matchesPlayed: 366, lastBattle: 'Yesterday', title: 'Bronze Widow', characterName: 'Paladin' },
+  { rank: 11, username: 'Ragnar Colosseum', score: 1439, wins: 1, matchesPlayed: 342, lastBattle: '2 days ago', title: 'Northern Roar', characterName: 'Barbarian' },
+  { rank: 12, username: 'Octavia Noctis', score: 1387, wins: 1, matchesPlayed: 321, lastBattle: '2 days ago', title: 'Moon Fang', characterName: 'Shadowblade' },
+  { rank: 13, username: 'Kael Warcrest', score: 1336, wins: 1, matchesPlayed: 307, lastBattle: '3 days ago', title: 'Broken Standard', characterName: 'Warlord' },
+  { rank: 14, username: 'Selene Ashspear', score: 1285, wins: 1, matchesPlayed: 294, lastBattle: '4 days ago', title: 'Silver Hunt', characterName: 'Huntress' },
+  { rank: 15, username: 'Darius Flint', score: 1232, wins: 0, matchesPlayed: 276, lastBattle: '5 days ago', title: 'Dust Reaper', characterName: 'Gunner' }
 ]
 
 export default function Leaderboard() {
