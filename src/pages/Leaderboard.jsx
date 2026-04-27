@@ -4,21 +4,21 @@ import { useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
 
 const fallbackLeaderboard = [
-  { rank: 1, gladiator: 'MOA_taz', score: 1890, wins: 6, kills: 584, lastBattle: '18 minutes ago', title: 'Arcen', class: 'Warrior' },
-  { rank: 2, gladiator: 'Spartacus Rex', score: 1821, wins: 5, kills: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains', class: 'Fighter' },
-  { rank: 3, gladiator: 'Cassia Bloodborn', score: 1779, wins: 5, kills: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress', class: 'Rogue' },
-  { rank: 4, gladiator: 'Tiberius Vale', score: 1824, wins: 4, kills: 503, lastBattle: '2 hours ago', title: 'Shield of Marble', class: 'Knight' },
-  { rank: 5, gladiator: 'Aurelia Vex', score: 1770, wins: 4, kills: 487, lastBattle: '3 hours ago', title: 'Viper of Rome', class: 'Assassin' },
-  { rank: 6, gladiator: 'Draven of Carthage', score: 1716, wins: 3, kills: 459, lastBattle: '5 hours ago', title: 'Ashblade', class: 'Pyromancer' },
-  { rank: 7, gladiator: 'Lucian Emberhand', score: 1658, wins: 3, kills: 432, lastBattle: 'Today at dawn', title: 'Firecaster', class: 'Wizard' },
-  { rank: 8, gladiator: 'Nyra the Huntress', score: 1604, wins: 2, kills: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn', class: 'Ranger' },
-  { rank: 9, gladiator: 'Valerius Thorn', score: 1550, wins: 2, kills: 389, lastBattle: 'Yesterday', title: 'Arena Whisper', class: 'Monk' },
-  { rank: 10, gladiator: 'Sabina Ironveil', score: 1497, wins: 2, kills: 366, lastBattle: 'Yesterday', title: 'Bronze Widow', class: 'Paladin' },
-  { rank: 11, gladiator: 'Ragnar Colosseum', score: 1439, wins: 1, kills: 342, lastBattle: '2 days ago', title: 'Northern Roar', class: 'Barbarian' },
-  { rank: 12, gladiator: 'Octavia Noctis', score: 1387, wins: 1, kills: 321, lastBattle: '2 days ago', title: 'Moon Fang', class: 'Shadowblade' },
-  { rank: 13, gladiator: 'Kael Warcrest', score: 1336, wins: 1, kills: 307, lastBattle: '3 days ago', title: 'Broken Standard', class: 'Warlord' },
-  { rank: 14, gladiator: 'Selene Ashspear', score: 1285, wins: 1, kills: 294, lastBattle: '4 days ago', title: 'Silver Hunt', class: 'Huntress' },
-  { rank: 15, gladiator: 'Darius Flint', score: 1232, wins: 0, kills: 276, lastBattle: '5 days ago', title: 'Dust Reaper', class: 'Gunner' }
+  { rank: 1, username: 'MOA_taz', score: 1890, wins: 6, matchesPlayed: 584, lastBattle: '18 minutes ago', title: 'Arcen', characterName: 'Warrior' },
+  { rank: 2, username: 'Spartacus Rex', score: 1821, wins: 5, matchesPlayed: 553, lastBattle: '42 minutes ago', title: 'Breaker of Chains', characterName: 'Fighter' },
+  { rank: 3, username: 'Cassia Bloodborn', score: 1779, wins: 5, matchesPlayed: 540, lastBattle: '1 hour ago', title: 'Red Sand Empress', characterName: 'Rogue' },
+  { rank: 4, username: 'Tiberius Vale', score: 1824, wins: 4, matchesPlayed: 503, lastBattle: '2 hours ago', title: 'Shield of Marble', characterName: 'Knight' },
+  { rank: 5, username: 'Aurelia Vex', score: 1770, wins: 4, matchesPlayed: 487, lastBattle: '3 hours ago', title: 'Viper of Rome', characterName: 'Assassin' },
+  { rank: 6, username: 'Draven of Carthage', score: 1716, wins: 3, matchesPlayed: 459, lastBattle: '5 hours ago', title: 'Ashblade', characterName: 'Pyromancer' },
+  { rank: 7, username: 'Lucian Emberhand', score: 1658, wins: 3, matchesPlayed: 432, lastBattle: 'Today at dawn', title: 'Firecaster', characterName: 'Wizard' },
+  { rank: 8, username: 'Nyra the Huntress', score: 1604, wins: 2, matchesPlayed: 411, lastBattle: 'Today at sunrise', title: 'Spear of Dawn', characterName: 'Ranger' },
+  { rank: 9, username: 'Valerius Thorn', score: 1550, wins: 2, matchesPlayed: 389, lastBattle: 'Yesterday', title: 'Arena Whisper', characterName: 'Monk' },
+  { rank: 10, username: 'Sabina Ironveil', score: 1497, wins: 2, matchesPlayed: 366, lastBattle: 'Yesterday', title: 'Bronze Widow', characterName: 'Paladin' },
+  { rank: 11, username: 'Ragnar Colosseum', score: 1439, wins: 1, matchesPlayed: 342, lastBattle: '2 days ago', title: 'Northern Roar', characterName: 'Barbarian' },
+  { rank: 12, username: 'Octavia Noctis', score: 1387, wins: 1, matchesPlayed: 321, lastBattle: '2 days ago', title: 'Moon Fang', characterName: 'Shadowblade' },
+  { rank: 13, username: 'Kael Warcrest', score: 1336, wins: 1, matchesPlayed: 307, lastBattle: '3 days ago', title: 'Broken Standard', characterName: 'Warlord' },
+  { rank: 14, username: 'Selene Ashspear', score: 1285, wins: 1, matchesPlayed: 294, lastBattle: '4 days ago', title: 'Silver Hunt', characterName: 'Huntress' },
+  { rank: 15, username: 'Darius Flint', score: 1232, wins: 0, matchesPlayed: 276, lastBattle: '5 days ago', title: 'Dust Reaper', characterName: 'Gunner' }
 ]
 
 export default function Leaderboard() {
@@ -30,8 +30,8 @@ export default function Leaderboard() {
     const normalized = search.trim().toLowerCase()
 
     let results = fallbackLeaderboard.filter((fighter) =>
-      fighter.gladiator.toLowerCase().includes(normalized) ||
-      fighter.class.toLowerCase().includes(normalized)
+      fighter.username.toLowerCase().includes(normalized) ||
+      fighter.characterName.toLowerCase().includes(normalized)
     )
 
     if (showTop3) {
@@ -116,8 +116,8 @@ export default function Leaderboard() {
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-12">
           {[
-            { icon: Crown, label: 'Reigning Champion', value: champion.gladiator, subtext: `${champion.score} score` },
-            { icon: Zap, label: 'Most Victories', value: mostVictories.wins, subtext: `${mostVictories.gladiator} leads the board` },
+            { icon: Crown, label: 'Reigning Champion', value: champion.username, subtext: `${champion.score} score` },
+            { icon: Zap, label: 'Most Victories', value: mostVictories.wins, subtext: `${mostVictories.username} leads the board` },
             { icon: Swords, label: 'Total Matches Logged', value: totalMatches, subtext: 'from the connected game backend' }
           ].map(({ icon: Icon, label, value, subtext }) => (
             <div key={label} className="panel-card p-6">
@@ -143,9 +143,9 @@ export default function Leaderboard() {
               </div>
               <p className="text-xs uppercase tracking-wider text-arena-sand">Champion Watch</p>
             </div>
-            <h3 className="text-2xl font-bold text-arena-parchment">{champion.gladiator}</h3>
+            <h3 className="text-2xl font-bold text-arena-parchment">{champion.username}</h3>
             <p className="mt-3 text-sm text-arena-sand">
-              {champion.gladiator} is currently leading with {champion.score} score and {champion.wins} wins.
+              {champion.username} is currently leading with {champion.score} score and {champion.wins} wins.
             </p>
           </div>
 
@@ -156,8 +156,8 @@ export default function Leaderboard() {
                 <span className="text-2xl font-bold text-arena-goldBright">#{champion.rank}</span>
               </div>
               <div className="flex-1">
-                <p className="text-xs uppercase tracking-wider text-arena-sand mb-1">{champion.class}</p>
-                <h3 className="text-2xl font-bold text-arena-goldBright">{champion.gladiator}</h3>
+                <p className="text-xs uppercase tracking-wider text-arena-sand mb-1">{champion.characterName}</p>
+                <h3 className="text-2xl font-bold text-arena-goldBright">{champion.username}</h3>
                 <p className="mt-2 text-sm text-arena-sand">{champion.score} score</p>
               </div>
             </div>
