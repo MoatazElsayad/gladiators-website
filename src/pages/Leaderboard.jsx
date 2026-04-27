@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Crown, Search, ShieldAlert, ShieldCheck, Skull, Sparkles, Swords, Trophy } from 'lucide-react'
+import { Crown, Search, ShieldAlert, Skull, Swords, Trophy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { fetchJson } from '../lib/api'
@@ -17,8 +17,6 @@ const sortOptions = [
   { key: 'wins', label: 'Sort by Wins' },
   { key: 'matchesPlayed', label: 'Sort by Matches' }
 ]
-
-const fallbackNormalizedRows = normalizeLeaderboardRows(fallbackLeaderboard)
 
 function formatLastBattle(value) {
   if (!value) {
@@ -72,8 +70,6 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [dataSource, setDataSource] = useState('fallback')
-  const logoPath = `${import.meta.env.BASE_URL}brand/logo.png`
-  const shieldPath = `${import.meta.env.BASE_URL}brand/shield.png`
 
   useEffect(() => {
     let cancelled = false
@@ -134,15 +130,8 @@ export default function Leaderboard() {
     }))
   }, [rows, search, showEliteOnly, sortBy])
 
-  const hasLiveRows = dataSource === 'live' && rows.length > 0
-  const isLiveEmpty = dataSource === 'live' && rows.length === 0
-
   const statCards = useMemo(() => {
-    const sourceRows = rows.length > 0
-      ? rows
-      : dataSource === 'fallback'
-        ? fallbackNormalizedRows
-        : []
+    const sourceRows = rows.length > 0 ? rows : normalizeLeaderboardRows(fallbackLeaderboard)
     const highestScore = [...sourceRows].sort((a, b) => b.score - a.score)[0]
     const mostWins = [...sourceRows].sort((a, b) => b.wins - a.wins)[0]
     const totalMatches = sourceRows.reduce((sum, fighter) => sum + fighter.matchesPlayed, 0)
@@ -152,7 +141,7 @@ export default function Leaderboard() {
         icon: Crown,
         label: 'Reigning Champion',
         value: highestScore?.username || 'Waiting for battles',
-        subtext: highestScore ? `${highestScore.score.toLocaleString()} score` : 'No live score uploaded yet'
+        subtext: highestScore ? `${highestScore.score.toLocaleString()} score` : 'No score uploaded yet'
       },
       {
         icon: Skull,
@@ -169,11 +158,6 @@ export default function Leaderboard() {
     ]
   }, [dataSource, rows])
 
-  const podiumFighters = useMemo(() => {
-    const sourceRows = filteredFighters.length > 0 ? filteredFighters : rows
-    return sourceRows.slice(0, 3)
-  }, [filteredFighters, rows])
-
   return (
     <section className="section-shell py-14 sm:py-16">
       <motion.div
@@ -181,58 +165,26 @@ export default function Leaderboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="panel-card relative overflow-hidden p-7 sm:p-8">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,160,23,0.14),transparent_32%),linear-gradient(135deg,rgba(92,64,51,0.2),transparent_50%)]" />
-            <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-arena-gold/25 bg-arena-gold/10 shadow-gold">
-                <img src={shieldPath} alt="Gladiators shield icon" className="h-14 w-14 object-contain" />
-              </div>
-              <div className="min-w-0">
-                <img src={logoPath} alt="Gladiators logo" className="h-12 w-auto sm:h-14" />
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-arena-sand">Hall of Glory</p>
-                <h1 className="mt-2 font-display text-3xl uppercase tracking-[0.16em] text-arena-goldBright sm:text-4xl">
-                  Arena Leaderboard
-                </h1>
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-arena-sand">
-                  Clear, live, and built around the real game. This board tracks uploaded battle results,
-                  highlights the strongest gladiators, and keeps the arena history easy to scan.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="panel-card p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Find a Warrior</p>
-            <label className="relative mt-4 block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-arena-gold" />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search gladiator or character"
-                className="w-full rounded-full border border-arena-bronzeLight/35 bg-arena-panel/85 py-3 pl-11 pr-4 text-arena-parchment outline-none transition focus:border-arena-gold/65"
-              />
-            </label>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <span className="status-pill border-arena-gold/40 bg-arena-gold/10 text-arena-goldBright">
-                {loading ? 'Loading board...' : `${filteredFighters.length} visible warriors`}
-              </span>
-              <span
-                className={`status-pill ${
-                  dataSource === 'live'
-                    ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
-                    : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'
-                }`}
-              >
-                {dataSource === 'live' ? 'Live backend sync' : 'Fallback showcase data'}
-              </span>
-            </div>
-            <p className="mt-5 text-sm leading-7 text-arena-sand">
-              Use the controls below to focus on the strongest three warriors or reorder the table by score,
-              victories, or match count.
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Hall Of Glory</p>
+            <h1 className="mt-4 section-title">Arena Leaderboard</h1>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-arena-sand">
+              Legendary names rise through the ranks below. This board now reads from the Gladiators backend,
+              and falls back gracefully if the service is offline.
             </p>
           </div>
+
+          <label className="relative block w-full max-w-md">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-arena-gold" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search gladiator or character"
+              className="w-full rounded-full border border-arena-bronzeLight/35 bg-arena-panel/85 py-3 pl-11 pr-4 text-arena-parchment outline-none transition focus:border-arena-gold/65"
+            />
+          </label>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -250,51 +202,6 @@ export default function Leaderboard() {
               <p className="mt-3 text-sm text-arena-sand">{subtext}</p>
             </div>
           ))}
-        </div>
-
-        <div className="mt-8 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="panel-card p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-arena-sand">Champion Watch</p>
-                <p className="mt-1 text-lg font-semibold text-arena-parchment">
-                  {podiumFighters[0]?.username || 'No champion recorded yet'}
-                </p>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-7 text-arena-sand">
-              {podiumFighters[0]
-                ? `${podiumFighters[0].username} is currently leading with ${podiumFighters[0].score.toLocaleString()} score and ${podiumFighters[0].wins} wins.`
-                : 'The production board is ready. As soon as the game uploads real battles, the top champion will appear here.'}
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            {podiumFighters.map((fighter, index) => (
-              <div key={fighter.username} className="panel-card flex items-center gap-4 p-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-arena-gold/35 bg-arena-gold/10 text-sm font-semibold text-arena-goldBright">
-                  #{index + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-arena-parchment">{fighter.username}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-arena-sand">
-                    {fighter.characterName} • {fighter.score.toLocaleString()} score
-                  </p>
-                </div>
-              </div>
-            ))}
-            {podiumFighters.length === 0 && (
-              <div className="panel-card flex items-center gap-4 p-5">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-arena-bronzeLight/35 bg-arena-panel/80 text-arena-sand">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <p className="text-sm leading-7 text-arena-sand">The podium will fill automatically once live battles are uploaded.</p>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
@@ -320,6 +227,18 @@ export default function Leaderboard() {
           >
             {showEliteOnly ? 'Showing Top 3' : 'Focus Top 3'}
           </button>
+          <span className="status-pill border-arena-gold/40 bg-arena-gold/10 text-arena-goldBright">
+            {loading ? 'Loading board...' : `${filteredFighters.length} visible warriors`}
+          </span>
+          <span
+            className={`status-pill ${
+              dataSource === 'live'
+                ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-200'
+                : 'border-arena-bloodGlow/35 bg-arena-blood/10 text-[#ffd4d4]'
+            }`}
+          >
+            {dataSource === 'live' ? 'Live backend sync' : 'Fallback showcase data'}
+          </span>
         </div>
 
         {errorMessage && (
@@ -333,20 +252,8 @@ export default function Leaderboard() {
           {filteredFighters.length > 0 ? (
             <LeaderboardTable rows={filteredFighters} />
           ) : (
-            <div className="panel-card p-10">
-              <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full border border-arena-gold/25 bg-arena-gold/10 shadow-gold">
-                  <img src={shieldPath} alt="Gladiators shield icon" className="h-14 w-14 object-contain" />
-                </div>
-                <p className="mt-6 font-display text-2xl uppercase tracking-[0.14em] text-arena-goldBright">
-                  {isLiveEmpty ? 'No Live Arena Records Yet' : 'No Matching Gladiators'}
-                </p>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-arena-sand">
-                  {isLiveEmpty
-                    ? 'The leaderboard connection is working, but no battle results have been uploaded yet. Finish one battle in the game and sync it to the website to populate this board.'
-                    : 'No gladiators matched that search. Try another name, clear the search box, or turn off the top-three focus filter.'}
-                </p>
-              </div>
+            <div className="panel-card p-10 text-center text-arena-sand">
+              No gladiators matched that search. Try another name or clear the elite filter.
             </div>
           )}
         </div>
