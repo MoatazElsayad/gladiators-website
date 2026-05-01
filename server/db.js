@@ -39,7 +39,7 @@ async function initializeDatabase() {
       damage_dealt_total INTEGER NOT NULL DEFAULT 0,
       damage_taken_total INTEGER NOT NULL DEFAULT 0,
       best_battle_duration_seconds REAL,
-      current_rank_label TEXT NOT NULL DEFAULT 'Rookie',
+      current_rank_label TEXT NOT NULL DEFAULT 'Wanderer',
       rating_points INTEGER NOT NULL DEFAULT 0,
       last_character_type TEXT,
       last_match_at TEXT,
@@ -198,12 +198,23 @@ function calculateRatingPoints(stats) {
   )
 }
 
-function rankLabelForPoints(points) {
-  if (points >= 25000) return 'Champion of Gold'
-  if (points >= 14000) return 'Arena Elite'
-  if (points >= 7000) return 'Battle Master'
-  if (points >= 2500) return 'Rising Contender'
-  return 'Rookie'
+function rankLabelForScore(score) {
+  const safeScore = Math.max(0, toInteger(score, 0))
+  if (safeScore >= 9000) return 'Immortal'
+  if (safeScore >= 6500) return 'Legend'
+  if (safeScore >= 4500) return 'High Champion'
+  if (safeScore >= 3200) return 'Champion'
+  if (safeScore >= 2200) return 'Warlord'
+  if (safeScore >= 1400) return 'Elite Knight'
+  if (safeScore >= 800) return 'Knight'
+  if (safeScore >= 400) return 'Gladiator'
+  if (safeScore >= 150) return 'Squire'
+  return 'Wanderer'
+}
+
+function rankBadgeForLabel(rankLabel) {
+  const safeRank = String(rankLabel || 'Wanderer').trim() || 'Wanderer'
+  return `/ranks/${safeRank.replace(/\s+/g, '_')}.png`
 }
 
 async function upsertPlayerAndMatch(payload) {
@@ -237,7 +248,7 @@ async function upsertPlayerAndMatch(payload) {
           normalizedUsername,
           safe.player.characterName,
           safe.player.characterType,
-          'Rookie',
+          'Wanderer',
           safe.battle.playedAt,
           now,
           now
@@ -324,7 +335,7 @@ async function upsertPlayerAndMatch(payload) {
     }
 
     const ratingPoints = calculateRatingPoints(nextStats)
-    const rankLabel = rankLabelForPoints(ratingPoints)
+    const rankLabel = rankLabelForScore(nextStats.total_score)
 
     runStatement(
       db,
@@ -390,6 +401,7 @@ async function upsertPlayerAndMatch(payload) {
       lanLosses: updatedPlayer.lan_losses,
       rankingPoints: updatedPlayer.rating_points,
       rankLabel: updatedPlayer.current_rank_label,
+      rankBadge: rankBadgeForLabel(rankLabelForScore(updatedPlayer.total_score)),
       lastBattleAt: updatedPlayer.last_match_at
     }
   } catch (error) {
@@ -464,7 +476,8 @@ async function getLeaderboard(options = {}) {
         wins: toInteger(row.wins, 0),
         losses: toInteger(row.losses, 0),
         matchesPlayed: toInteger(row.matches_played, 0),
-        title: rankLabelForPoints(rankingPoints),
+        title: rankLabelForScore(row.score),
+        rankBadge: rankBadgeForLabel(rankLabelForScore(row.score)),
         lastBattleAt: row.last_battle_at
       }
     })
@@ -490,7 +503,8 @@ async function getLeaderboard(options = {}) {
     wins: toInteger(row.wins, 0),
     losses: toInteger(row.losses, 0),
     matchesPlayed: toInteger(row.matches_played, 0),
-    title: row.current_rank_label,
+    title: rankLabelForScore(row.total_score),
+    rankBadge: rankBadgeForLabel(rankLabelForScore(row.total_score)),
     lastBattleAt: row.last_match_at
   }))
 }
@@ -621,7 +635,8 @@ async function getPlayerProfile(username) {
     damageTakenTotal: toInteger(player.damage_taken_total, 0),
     bestBattleDurationSeconds: toFloat(player.best_battle_duration_seconds, 0),
     rankingPoints: toInteger(player.rating_points, 0),
-    rankLabel: player.current_rank_label,
+    rankLabel: rankLabelForScore(player.total_score),
+    rankBadge: rankBadgeForLabel(rankLabelForScore(player.total_score)),
     lastBattleAt: player.last_match_at,
     recentMatches
   }

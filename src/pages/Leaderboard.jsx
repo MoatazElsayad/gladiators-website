@@ -3,13 +3,14 @@ import { Crown, Search, ShieldAlert, Skull, Swords, Trophy } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import LeaderboardTable from '../components/LeaderboardTable'
 import { fetchJson } from '../lib/api'
+import { normalizeRankName, rankBadgeSrc } from '../lib/ranks'
 
 const fallbackLeaderboard = [
-  { rank: 1, username: 'Maximus Aurelius', score: 198450, wins: 126, matchesPlayed: 151, lastBattleAt: '2026-04-25T18:00:00Z', title: 'Champion of Gold', characterName: 'Knight' },
-  { rank: 2, username: 'Spartacus Rex', score: 192130, wins: 121, matchesPlayed: 146, lastBattleAt: '2026-04-25T17:36:00Z', title: 'Breaker of Chains', characterName: 'Fantasy Warrior' },
-  { rank: 3, username: 'Cassia Bloodborn', score: 187920, wins: 117, matchesPlayed: 141, lastBattleAt: '2026-04-25T17:00:00Z', title: 'Red Sand Empress', characterName: 'Huntress' },
-  { rank: 4, username: 'Tiberius Vale', score: 182440, wins: 111, matchesPlayed: 136, lastBattleAt: '2026-04-25T16:00:00Z', title: 'Shield of Marble', characterName: 'Knight' },
-  { rank: 5, username: 'Aurelia Vex', score: 176980, wins: 106, matchesPlayed: 130, lastBattleAt: '2026-04-25T15:00:00Z', title: 'Viper of Rome', characterName: 'Demon Slayer' }
+  { rank: 1, username: 'Maximus Aurelius', score: 9800, wins: 126, matchesPlayed: 151, lastBattleAt: '2026-04-25T18:00:00Z', title: 'Immortal', characterName: 'Knight' },
+  { rank: 2, username: 'Spartacus Rex', score: 7200, wins: 121, matchesPlayed: 146, lastBattleAt: '2026-04-25T17:36:00Z', title: 'Legend', characterName: 'Fantasy Warrior' },
+  { rank: 3, username: 'Cassia Bloodborn', score: 5100, wins: 117, matchesPlayed: 141, lastBattleAt: '2026-04-25T17:00:00Z', title: 'High Champion', characterName: 'Huntress' },
+  { rank: 4, username: 'Tiberius Vale', score: 3500, wins: 111, matchesPlayed: 136, lastBattleAt: '2026-04-25T16:00:00Z', title: 'Champion', characterName: 'Knight' },
+  { rank: 5, username: 'Aurelia Vex', score: 2400, wins: 106, matchesPlayed: 130, lastBattleAt: '2026-04-25T15:00:00Z', title: 'Warlord', characterName: 'Demon Slayer' }
 ]
 
 const sortOptions = [
@@ -49,17 +50,23 @@ function formatLastBattle(value) {
 }
 
 function normalizeLeaderboardRows(rows) {
-  return (rows || []).map((fighter, index) => ({
-    rank: fighter.rank || index + 1,
-    username: fighter.username || fighter.gladiator || 'Unknown Gladiator',
-    characterName: fighter.characterName || 'Unknown',
-    score: Number(fighter.score || 0),
-    wins: Number(fighter.wins || 0),
-    matchesPlayed: Number(fighter.matchesPlayed || 0),
-    lastBattleAt: fighter.lastBattleAt || null,
-    lastBattle: formatLastBattle(fighter.lastBattleAt),
-    title: fighter.title || fighter.rankLabel || 'Arena Fighter'
-  }))
+  return (rows || []).map((fighter, index) => {
+    const score = Number(fighter.score || 0)
+    const title = normalizeRankName(fighter.title || fighter.rankLabel, score)
+
+    return {
+      rank: fighter.rank || index + 1,
+      username: fighter.username || fighter.gladiator || 'Unknown Gladiator',
+      characterName: fighter.characterName || 'Unknown',
+      score,
+      wins: Number(fighter.wins || 0),
+      matchesPlayed: Number(fighter.matchesPlayed || 0),
+      lastBattleAt: fighter.lastBattleAt || null,
+      lastBattle: formatLastBattle(fighter.lastBattleAt),
+      title,
+      rankBadge: fighter.rankBadge || rankBadgeSrc(title)
+    }
+  })
 }
 
 export default function Leaderboard() {

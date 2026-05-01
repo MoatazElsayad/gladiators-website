@@ -13,6 +13,7 @@ export default function LeaderboardTable({ rows }) {
             <tr>
               <th className="px-4 py-4 sm:px-6">Rank</th>
               <th className="px-4 py-4 sm:px-6">Gladiator</th>
+              <th className="px-4 py-4 sm:px-6">Title</th>
               <th className="px-4 py-4 sm:px-6">Character</th>
               <th className="px-4 py-4 sm:px-6">Score</th>
               <th className="px-4 py-4 sm:px-6">Wins</th>
@@ -35,7 +36,23 @@ export default function LeaderboardTable({ rows }) {
                 </td>
                 <td className="px-4 py-4 sm:px-6">
                   <p className="font-semibold text-arena-parchment">{fighter.username}</p>
-                  {fighter.title && <p className="mt-1 text-xs uppercase tracking-[0.16em] text-arena-sand">{fighter.title}</p>}
+                  <p className="mt-1 text-xs uppercase tracking-[0.16em] text-arena-sand">Arena contender</p>
+                </td>
+                <td className="px-4 py-4 sm:px-6">
+                  <div className="flex min-w-[170px] items-center gap-3">
+                    <img
+                      src={fighter.rankBadge}
+                      alt={`${fighter.title} rank badge`}
+                      className="h-12 w-12 shrink-0 rounded-full object-contain drop-shadow-[0_0_12px_rgba(212,160,23,0.32)]"
+                      loading="lazy"
+                    />
+                    <div>
+                      <p className="font-semibold text-arena-goldBright">{fighter.title}</p>
+                      <p className="mt-1 text-[0.68rem] uppercase tracking-[0.18em] text-arena-sand">
+                        Rank Title
+                      </p>
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-4 text-arena-sand sm:px-6">{fighter.characterName}</td>
                 <td className="px-4 py-4 font-semibold text-arena-goldBright sm:px-6">
