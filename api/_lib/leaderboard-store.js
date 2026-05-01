@@ -104,6 +104,14 @@ function toFloat(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+function optionalNonNegativeInteger(value) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return null
+  }
+
+  return Math.max(0, toInteger(value, 0))
+}
+
 function toIsoDate(value, fallback = new Date()) {
   const parsed = value ? new Date(value) : fallback
   if (Number.isNaN(parsed.getTime())) {
@@ -127,7 +135,12 @@ function sanitizeBattlePayload(payload) {
     player: {
       username,
       characterType: String(player.characterType || '').trim() || null,
-      characterName: String(player.characterName || '').trim() || null
+      characterName: String(player.characterName || '').trim() || null,
+      totalScore: optionalNonNegativeInteger(player.totalScore),
+      wins: optionalNonNegativeInteger(player.wins),
+      losses: optionalNonNegativeInteger(player.losses),
+      matchesPlayed: optionalNonNegativeInteger(player.matchesPlayed),
+      rankLabel: String(player.rankLabel || '').trim() || null
     },
     battle: {
       mode: String(battle.mode || 'save_the_king').trim() || 'save_the_king',
@@ -309,12 +322,13 @@ export async function upsertPlayerAndMatch(payload) {
     );
   `
 
+  const nextTotalScore = safe.player.totalScore ?? (toInteger(player.total_score, 0) + safe.battle.score)
   const nextStats = {
-    totalScore: toInteger(player.total_score, 0) + safe.battle.score,
-    highScore: Math.max(toInteger(player.high_score, 0), safe.battle.score),
-    wins: toInteger(player.wins, 0) + (safe.battle.victory ? 1 : 0),
-    losses: toInteger(player.losses, 0) + (safe.battle.victory ? 0 : 1),
-    matchesPlayed: toInteger(player.matches_played, 0) + 1,
+    totalScore: nextTotalScore,
+    highScore: Math.max(toInteger(player.high_score, 0), safe.battle.score, nextTotalScore),
+    wins: safe.player.wins ?? (toInteger(player.wins, 0) + (safe.battle.victory ? 1 : 0)),
+    losses: safe.player.losses ?? (toInteger(player.losses, 0) + (safe.battle.victory ? 0 : 1)),
+    matchesPlayed: safe.player.matchesPlayed ?? (toInteger(player.matches_played, 0) + 1),
     campaignClears: toInteger(player.campaign_clears, 0) + (safe.battle.campaignComplete ? 1 : 0),
     lanWins: toInteger(player.lan_wins, 0) + (safe.battle.mode === 'lan_duel' && safe.battle.victory ? 1 : 0),
     lanLosses: toInteger(player.lan_losses, 0) + (safe.battle.mode === 'lan_duel' && !safe.battle.victory ? 1 : 0),
