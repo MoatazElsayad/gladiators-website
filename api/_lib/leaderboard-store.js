@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { hashPassword, verifyPassword } from './auth.js'
 
 function getDatabaseUrl() {
   return String(process.env.DATABASE_URL || '').trim()
@@ -49,6 +50,11 @@ async function ensureSchema() {
         );
       `
 
+      await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS email TEXT;`
+      await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS normalized_email TEXT;`
+      await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS password_salt TEXT;`
+      await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS password_hash TEXT;`
+
       await sql`
         CREATE TABLE IF NOT EXISTS matches (
           id SERIAL PRIMARY KEY,
@@ -77,10 +83,52 @@ async function ensureSchema() {
         );
       `
 
+      await sql`
+        CREATE TABLE IF NOT EXISTS battle_highlights (
+          id SERIAL PRIMARY KEY,
+          player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+          match_id INTEGER REFERENCES matches(id) ON DELETE SET NULL,
+          mode TEXT NOT NULL,
+          character_type TEXT,
+          character_name TEXT,
+          enemy_type TEXT,
+          enemy_name TEXT,
+          victory BOOLEAN NOT NULL DEFAULT FALSE,
+          battle_duration_seconds DOUBLE PRECISION,
+          score INTEGER NOT NULL DEFAULT 0,
+          attack_type TEXT NOT NULL,
+          damage INTEGER NOT NULL DEFAULT 0,
+          was_projectile BOOLEAN NOT NULL DEFAULT FALSE,
+          was_finisher BOOLEAN NOT NULL DEFAULT FALSE,
+          highlight_score INTEGER NOT NULL DEFAULT 0,
+          player_hp_before INTEGER,
+          player_hp_after INTEGER,
+          player_max_hp INTEGER,
+          enemy_hp_before INTEGER,
+          enemy_hp_after INTEGER,
+          level_index INTEGER,
+          level_name TEXT,
+          image_url TEXT NOT NULL,
+          image_content_type TEXT,
+          analysis_status TEXT NOT NULL DEFAULT 'pending',
+          analysis_title TEXT,
+          analysis_summary TEXT,
+          analysis_strengths JSONB NOT NULL DEFAULT '[]'::jsonb,
+          analysis_mistakes JSONB NOT NULL DEFAULT '[]'::jsonb,
+          analysis_coach_tip TEXT,
+          captured_at TIMESTAMPTZ NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL
+        );
+      `
+
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_player_id ON matches(player_id);`
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_played_at ON matches(played_at DESC);`
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_mode ON matches(mode);`
       await sql`CREATE INDEX IF NOT EXISTS idx_players_rating_points ON players(rating_points DESC, total_score DESC);`
+      await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_players_normalized_email ON players(normalized_email) WHERE normalized_email IS NOT NULL;`
+      await sql`CREATE INDEX IF NOT EXISTS idx_battle_highlights_player_id ON battle_highlights(player_id);`
+      await sql`CREATE INDEX IF NOT EXISTS idx_battle_highlights_captured_at ON battle_highlights(captured_at DESC, id DESC);`
     })().catch((error) => {
       schemaReadyPromise = null
       throw error
@@ -118,6 +166,25 @@ function toIsoDate(value, fallback = new Date()) {
     return new Date().toISOString()
   }
   return parsed.toISOString()
+}
+
+function toStringArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || '').trim()).filter(Boolean)
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed)
+        ? parsed.map((item) => String(item || '').trim()).filter(Boolean)
+        : []
+    } catch (error) {
+      return []
+    }
+  }
+
+  return []
 }
 
 function sanitizeBattlePayload(payload) {
@@ -194,6 +261,26 @@ function rankLabelForScore(score) {
 function rankBadgeForLabel(rankLabel) {
   const safeRank = String(rankLabel || 'Wanderer').trim() || 'Wanderer'
   return `/ranks/${safeRank.replace(/\s+/g, '_')}.png`
+}
+
+function mapAuthPlayer(row) {
+  if (!row) {
+    return null
+  }
+
+  return {
+    id: toInteger(row.id, 0),
+    username: row.username,
+    email: row.email || '',
+    favoriteCharacter: row.favorite_character || row.last_character_type || '',
+    totalScore: toInteger(row.total_score, 0),
+    wins: toInteger(row.wins, 0),
+    losses: toInteger(row.losses, 0),
+    matchesPlayed: toInteger(row.matches_played, 0),
+    rankLabel: rankLabelForScore(row.total_score),
+    rankBadge: rankBadgeForLabel(rankLabelForScore(row.total_score)),
+    lastBattleAt: row.last_match_at
+  }
 }
 
 function mapPlayerSummary(row) {
@@ -369,6 +456,137 @@ export async function upsertPlayerAndMatch(payload) {
   `
 
   return mapPlayerSummary(updatedRows[0])
+}
+
+export async function registerWebsiteAccount({ email, username, password }) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const cleanEmail = String(email || '').trim()
+  const cleanUsername = String(username || '').trim()
+  const cleanPassword = String(password || '')
+  const normalizedUsername = normalizeUsername(cleanUsername)
+  const normalizedEmail = normalizeUsername(cleanEmail)
+
+  if (!cleanEmail || !cleanUsername || !cleanPassword) {
+    throw new Error('email, username, and password are required.')
+  }
+  if (cleanUsername.length < 3) {
+    throw new Error('Username must be at least 3 characters long.')
+  }
+  if (cleanPassword.length < 6) {
+    throw new Error('Password must be at least 6 characters long.')
+  }
+
+  const emailRows = await sql`
+    SELECT *
+    FROM players
+    WHERE normalized_email = ${normalizedEmail}
+    LIMIT 1;
+  `
+  if (emailRows[0] && normalizeUsername(emailRows[0].username) !== normalizedUsername) {
+    throw new Error('That email is already registered.')
+  }
+
+  const playerRows = await sql`
+    SELECT *
+    FROM players
+    WHERE normalized_username = ${normalizedUsername}
+    LIMIT 1;
+  `
+
+  const existing = playerRows[0]
+  if (existing?.password_hash && normalizeUsername(existing.email) !== normalizedEmail) {
+    throw new Error('That username is already registered.')
+  }
+
+  const { salt, hash } = hashPassword(cleanPassword)
+  const now = new Date().toISOString()
+
+  if (existing) {
+    const updatedRows = await sql`
+      UPDATE players
+      SET
+        username = ${cleanUsername},
+        email = ${cleanEmail},
+        normalized_email = ${normalizedEmail},
+        password_salt = ${salt},
+        password_hash = ${hash},
+        updated_at = ${now}
+      WHERE id = ${existing.id}
+      RETURNING *;
+    `
+    return mapAuthPlayer(updatedRows[0])
+  }
+
+  const insertedRows = await sql`
+    INSERT INTO players (
+      username,
+      normalized_username,
+      email,
+      normalized_email,
+      password_salt,
+      password_hash,
+      current_rank_label,
+      created_at,
+      updated_at
+    ) VALUES (
+      ${cleanUsername},
+      ${normalizedUsername},
+      ${cleanEmail},
+      ${normalizedEmail},
+      ${salt},
+      ${hash},
+      ${'Wanderer'},
+      ${now},
+      ${now}
+    )
+    RETURNING *;
+  `
+
+  return mapAuthPlayer(insertedRows[0])
+}
+
+export async function authenticateWebsiteAccount({ identity, password }) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const normalizedIdentity = normalizeUsername(identity)
+
+  if (!normalizedIdentity || !password) {
+    throw new Error('Username/email and password are required.')
+  }
+
+  const rows = await sql`
+    SELECT *
+    FROM players
+    WHERE normalized_username = ${normalizedIdentity}
+       OR normalized_email = ${normalizedIdentity}
+    LIMIT 1;
+  `
+  const player = rows[0]
+
+  if (!player || !verifyPassword(password, player.password_salt, player.password_hash)) {
+    throw new Error('Invalid username/email or password.')
+  }
+
+  return mapAuthPlayer(player)
+}
+
+export async function getAuthPlayerById(id) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const playerId = Math.max(0, toInteger(id, 0))
+  if (!playerId) {
+    return null
+  }
+
+  const rows = await sql`
+    SELECT *
+    FROM players
+    WHERE id = ${playerId}
+    LIMIT 1;
+  `
+
+  return mapAuthPlayer(rows[0])
 }
 
 export async function getLeaderboard(options = {}) {
@@ -624,4 +842,250 @@ export async function getPlayerProfile(username) {
       playedAt: row.played_at
     }))
   }
+}
+
+function mapHighlightRow(row) {
+  return {
+    id: toInteger(row.id, 0),
+    username: row.username,
+    mode: row.mode,
+    characterType: row.character_type,
+    characterName: row.character_name,
+    enemyType: row.enemy_type,
+    enemyName: row.enemy_name,
+    victory: Boolean(row.victory),
+    battleDurationSeconds: toFloat(row.battle_duration_seconds, 0),
+    score: toInteger(row.score, 0),
+    attackType: row.attack_type,
+    damage: toInteger(row.damage, 0),
+    wasProjectile: Boolean(row.was_projectile),
+    wasFinisher: Boolean(row.was_finisher),
+    highlightScore: toInteger(row.highlight_score, 0),
+    playerHpBefore: toInteger(row.player_hp_before, 0),
+    playerHpAfter: toInteger(row.player_hp_after, 0),
+    playerMaxHp: toInteger(row.player_max_hp, 0),
+    enemyHpBefore: toInteger(row.enemy_hp_before, 0),
+    enemyHpAfter: toInteger(row.enemy_hp_after, 0),
+    levelIndex: toInteger(row.level_index, 0),
+    levelName: row.level_name,
+    imageUrl: row.image_url,
+    imageContentType: row.image_content_type,
+    analysisStatus: row.analysis_status || 'pending',
+    analysisTitle: row.analysis_title || '',
+    analysisSummary: row.analysis_summary || '',
+    analysisStrengths: toStringArray(row.analysis_strengths),
+    analysisMistakes: toStringArray(row.analysis_mistakes),
+    analysisCoachTip: row.analysis_coach_tip || '',
+    capturedAt: row.captured_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
+
+export async function createBattleHighlight(payload) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const now = new Date().toISOString()
+  const username = String(payload.username || '').trim()
+  const normalizedUsername = normalizeUsername(username)
+
+  if (!normalizedUsername) {
+    throw new Error('username is required.')
+  }
+
+  let playerRows = await sql`
+    SELECT *
+    FROM players
+    WHERE normalized_username = ${normalizedUsername}
+    LIMIT 1;
+  `
+
+  let player = playerRows[0]
+
+  if (!player) {
+    const insertedRows = await sql`
+      INSERT INTO players (
+        username,
+        normalized_username,
+        favorite_character,
+        last_character_type,
+        current_rank_label,
+        created_at,
+        updated_at
+      ) VALUES (
+        ${username},
+        ${normalizedUsername},
+        ${payload.characterName || null},
+        ${payload.characterType || null},
+        ${'Wanderer'},
+        ${now},
+        ${now}
+      )
+      RETURNING *;
+    `
+
+    player = insertedRows[0]
+  }
+
+  const insertedRows = await sql`
+    INSERT INTO battle_highlights (
+      player_id,
+      match_id,
+      mode,
+      character_type,
+      character_name,
+      enemy_type,
+      enemy_name,
+      victory,
+      battle_duration_seconds,
+      score,
+      attack_type,
+      damage,
+      was_projectile,
+      was_finisher,
+      highlight_score,
+      player_hp_before,
+      player_hp_after,
+      player_max_hp,
+      enemy_hp_before,
+      enemy_hp_after,
+      level_index,
+      level_name,
+      image_url,
+      image_content_type,
+      analysis_status,
+      captured_at,
+      created_at,
+      updated_at
+    ) VALUES (
+      ${player.id},
+      ${payload.matchId || null},
+      ${payload.mode},
+      ${payload.characterType || null},
+      ${payload.characterName || null},
+      ${payload.enemyType || null},
+      ${payload.enemyName || null},
+      ${Boolean(payload.victory)},
+      ${toFloat(payload.battleDurationSeconds, 0)},
+      ${toInteger(payload.score, 0)},
+      ${payload.attackType},
+      ${toInteger(payload.damage, 0)},
+      ${Boolean(payload.wasProjectile)},
+      ${Boolean(payload.wasFinisher)},
+      ${toInteger(payload.highlightScore, 0)},
+      ${optionalNonNegativeInteger(payload.playerHpBefore)},
+      ${optionalNonNegativeInteger(payload.playerHpAfter)},
+      ${optionalNonNegativeInteger(payload.playerMaxHp)},
+      ${optionalNonNegativeInteger(payload.enemyHpBefore)},
+      ${optionalNonNegativeInteger(payload.enemyHpAfter)},
+      ${optionalNonNegativeInteger(payload.levelIndex)},
+      ${payload.levelName || null},
+      ${payload.imageUrl},
+      ${payload.imageContentType || null},
+      ${payload.analysisStatus || 'pending'},
+      ${toIsoDate(payload.capturedAt)},
+      ${now},
+      ${now}
+    )
+    RETURNING *;
+  `
+
+  await sql`
+    UPDATE players
+    SET
+      username = ${username},
+      favorite_character = ${payload.characterName || player.favorite_character},
+      last_character_type = ${payload.characterType || player.last_character_type},
+      updated_at = ${now}
+    WHERE id = ${player.id};
+  `
+
+  const row = insertedRows[0]
+  return {
+    ...mapHighlightRow({ ...row, username }),
+    playerId: toInteger(player.id, 0)
+  }
+}
+
+export async function getHighlightsForPlayer(username, limit = 24) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const normalized = normalizeUsername(username)
+
+  if (!normalized) {
+    return []
+  }
+
+  const rows = await sql`
+    SELECT
+      h.*,
+      p.username
+    FROM battle_highlights h
+    JOIN players p ON p.id = h.player_id
+    WHERE p.normalized_username = ${normalized}
+    ORDER BY h.captured_at DESC, h.id DESC
+    LIMIT ${Math.min(Math.max(toInteger(limit, 24), 1), 60)};
+  `
+
+  return rows.map((row) => mapHighlightRow(row))
+}
+
+export async function getHighlightById(id) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const highlightId = Math.max(0, toInteger(id, 0))
+  if (!highlightId) {
+    return null
+  }
+
+  const rows = await sql`
+    SELECT
+      h.*,
+      p.username
+    FROM battle_highlights h
+    JOIN players p ON p.id = h.player_id
+    WHERE h.id = ${highlightId}
+    LIMIT 1;
+  `
+
+  return rows[0] ? mapHighlightRow(rows[0]) : null
+}
+
+export async function saveHighlightAnalysis(id, analysis) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const highlightId = Math.max(0, toInteger(id, 0))
+  if (!highlightId) {
+    throw new Error('Highlight id is required.')
+  }
+
+  const updatedRows = await sql`
+    UPDATE battle_highlights
+    SET
+      analysis_status = ${analysis?.status || 'complete'},
+      analysis_title = ${analysis?.title || null},
+      analysis_summary = ${analysis?.summary || null},
+      analysis_strengths = ${JSON.stringify(toStringArray(analysis?.strengths))}::jsonb,
+      analysis_mistakes = ${JSON.stringify(toStringArray(analysis?.mistakes))}::jsonb,
+      analysis_coach_tip = ${analysis?.coachTip || null},
+      updated_at = ${new Date().toISOString()}
+    WHERE id = ${highlightId}
+    RETURNING *;
+  `
+
+  if (!updatedRows[0]) {
+    return null
+  }
+
+  const rows = await sql`
+    SELECT
+      h.*,
+      p.username
+    FROM battle_highlights h
+    JOIN players p ON p.id = h.player_id
+    WHERE h.id = ${highlightId}
+    LIMIT 1;
+  `
+
+  return rows[0] ? mapHighlightRow(rows[0]) : null
 }

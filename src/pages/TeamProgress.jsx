@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ProgressBar from '../components/ProgressBar'
 import TodoList from '../components/TodoList'
 
@@ -13,11 +13,6 @@ const normalizeTasks = (items) =>
 
 export default function TeamProgress() {
   const [tasks, setTasks] = useState([])
-  const completedCount = useMemo(() => tasks.filter((task) => task.done).length, [tasks])
-  const progress = useMemo(
-    () => (tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0),
-    [completedCount, tasks.length]
-  )
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -43,6 +38,14 @@ export default function TeamProgress() {
         body: JSON.stringify(tasks)
       }).catch((error) => console.error('Failed to save tasks:', error))
     }
+  }, [tasks])
+
+  useEffect(() => {
+    const completed = tasks.filter((task) => task.done).length
+    const completionRate = tasks.length ? Math.round((completed / tasks.length) * 100) : 0
+
+    setCompletedCount(completed)
+    setProgress(completionRate)
   }, [tasks])
 
   const addTask = ({ taskName, priority }) => {

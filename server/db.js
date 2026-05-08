@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const crypto = require('crypto')
 const initSqlJs = require('sql.js')
 
 const dataDirectory = path.join(__dirname, 'data')
@@ -80,12 +81,25 @@ async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_players_rating_points ON players(rating_points DESC, total_score DESC);
   `)
 
+  ensureColumn(db, 'players', 'email', 'TEXT')
+  ensureColumn(db, 'players', 'normalized_email', 'TEXT')
+  ensureColumn(db, 'players', 'password_salt', 'TEXT')
+  ensureColumn(db, 'players', 'password_hash', 'TEXT')
+  db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_players_normalized_email ON players(normalized_email) WHERE normalized_email IS NOT NULL;')
+
   persistDatabase(db)
   return db
 }
 
 function persistDatabase(db) {
   fs.writeFileSync(databasePath, Buffer.from(db.export()))
+}
+
+function ensureColumn(db, tableName, columnName, columnDefinition) {
+  const columns = getAll(db, `PRAGMA table_info(${tableName})`)
+  if (!columns.some((column) => column.name === columnName)) {
+    db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition};`)
+  }
 }
 
 function normalizeUsername(username) {
@@ -228,6 +242,41 @@ function rankLabelForScore(score) {
 function rankBadgeForLabel(rankLabel) {
   const safeRank = String(rankLabel || 'Wanderer').trim() || 'Wanderer'
   return `/ranks/${safeRank.replace(/\s+/g, '_')}.png`
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.pbkdf2Sync(String(password || ''), salt, 120000, 32, 'sha256').toString('hex')
+  return { salt, hash }
+}
+
+function verifyPassword(password, salt, expectedHash) {
+  if (!salt || !expectedHash) {
+    return false
+  }
+  const { hash } = hashPassword(password, salt)
+  const left = Buffer.from(hash, 'hex')
+  const right = Buffer.from(String(expectedHash), 'hex')
+  return left.length === right.length && crypto.timingSafeEqual(left, right)
+}
+
+function mapAuthPlayer(row) {
+  if (!row) {
+    return null
+  }
+
+  return {
+    id: toInteger(row.id, 0),
+    username: row.username,
+    email: row.email || '',
+    favoriteCharacter: row.favorite_character || row.last_character_type || '',
+    totalScore: toInteger(row.total_score, 0),
+    wins: toInteger(row.wins, 0),
+    losses: toInteger(row.losses, 0),
+    matchesPlayed: toInteger(row.matches_played, 0),
+    rankLabel: rankLabelForScore(row.total_score),
+    rankBadge: rankBadgeForLabel(rankLabelForScore(row.total_score)),
+    lastBattleAt: row.last_match_at
+  }
 }
 
 async function upsertPlayerAndMatch(payload) {
@@ -670,11 +719,116 @@ async function getDatabaseStats() {
   }
 }
 
+async function registerWebsiteAccount({ email, username, password }) {
+  const db = await dbReady
+  const cleanEmail = String(email || '').trim()
+  const cleanUsername = String(username || '').trim()
+  const cleanPassword = String(password || '')
+  const normalizedUsername = normalizeUsername(cleanUsername)
+  const normalizedEmail = normalizeUsername(cleanEmail)
+
+  if (!cleanEmail || !cleanUsername || !cleanPassword) {
+    throw new Error('email, username, and password are required.')
+  }
+  if (cleanUsername.length < 3) {
+    throw new Error('Username must be at least 3 characters long.')
+  }
+  if (cleanPassword.length < 6) {
+    throw new Error('Password must be at least 6 characters long.')
+  }
+
+  const emailPlayer = getOne(db, 'SELECT * FROM players WHERE normalized_email = ? LIMIT 1', [normalizedEmail])
+  if (emailPlayer && normalizeUsername(emailPlayer.username) !== normalizedUsername) {
+    throw new Error('That email is already registered.')
+  }
+
+  const existing = getOne(db, 'SELECT * FROM players WHERE normalized_username = ? LIMIT 1', [normalizedUsername])
+  if (existing && existing.password_hash && normalizeUsername(existing.email) !== normalizedEmail) {
+    throw new Error('That username is already registered.')
+  }
+
+  const { salt, hash } = hashPassword(cleanPassword)
+  const now = new Date().toISOString()
+
+  if (existing) {
+    runStatement(
+      db,
+      `
+        UPDATE players
+        SET username = ?,
+            email = ?,
+            normalized_email = ?,
+            password_salt = ?,
+            password_hash = ?,
+            updated_at = ?
+        WHERE id = ?
+      `,
+      [cleanUsername, cleanEmail, normalizedEmail, salt, hash, now, existing.id]
+    )
+    persistDatabase(db)
+    return mapAuthPlayer(getOne(db, 'SELECT * FROM players WHERE id = ? LIMIT 1', [existing.id]))
+  }
+
+  runStatement(
+    db,
+    `
+      INSERT INTO players (
+        username,
+        normalized_username,
+        email,
+        normalized_email,
+        password_salt,
+        password_hash,
+        current_rank_label,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [cleanUsername, normalizedUsername, cleanEmail, normalizedEmail, salt, hash, 'Wanderer', now, now]
+  )
+  persistDatabase(db)
+  return mapAuthPlayer(getOne(db, 'SELECT * FROM players WHERE normalized_username = ? LIMIT 1', [normalizedUsername]))
+}
+
+async function authenticateWebsiteAccount({ identity, password }) {
+  const db = await dbReady
+  const normalizedIdentity = normalizeUsername(identity)
+
+  if (!normalizedIdentity || !password) {
+    throw new Error('Username/email and password are required.')
+  }
+
+  const player = getOne(
+    db,
+    'SELECT * FROM players WHERE normalized_username = ? OR normalized_email = ? LIMIT 1',
+    [normalizedIdentity, normalizedIdentity]
+  )
+
+  if (!player || !verifyPassword(password, player.password_salt, player.password_hash)) {
+    throw new Error('Invalid username/email or password.')
+  }
+
+  return mapAuthPlayer(player)
+}
+
+async function getAuthPlayerById(id) {
+  const db = await dbReady
+  const playerId = Math.max(0, toInteger(id, 0))
+  if (!playerId) {
+    return null
+  }
+
+  return mapAuthPlayer(getOne(db, 'SELECT * FROM players WHERE id = ? LIMIT 1', [playerId]))
+}
+
 module.exports = {
   databasePath,
+  authenticateWebsiteAccount,
   getDatabaseStats,
+  getAuthPlayerById,
   getLeaderboard,
   getPlayerProfile,
   getRecentMatches,
+  registerWebsiteAccount,
   upsertPlayerAndMatch
 }

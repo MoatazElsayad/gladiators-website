@@ -2,10 +2,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Menu, Swords, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 
 const navItems = [
   { label: 'Home', to: '/' },
   { label: 'Leaderboard', to: '/leaderboard' },
+  { label: 'AI Coach', to: '/coach' },
   { label: 'Team Progress', to: '/team-progress' }
 ]
 
@@ -22,6 +24,7 @@ export default function Navbar() {
   const [showModal, setShowModal] = useState(false)
   const location = useLocation()
   const logoPath = `${import.meta.env.BASE_URL}logo.svg`
+  const { isAuthenticated, player, logout } = useAuth()
 
   useEffect(() => {
     setMobileOpen(false)
@@ -68,6 +71,20 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
+            {isAuthenticated ? (
+              <>
+                <NavLink to="/profile" className={linkClasses}>
+                  {player?.username || 'Profile'}
+                </NavLink>
+                <button type="button" onClick={logout} className="ghost-button text-xs">
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <NavLink to="/login" className={linkClasses}>
+                Sign In
+              </NavLink>
+            )}
             <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
               <Swords className="mr-2 h-4 w-4" />
               Play Game
@@ -98,6 +115,20 @@ export default function Navbar() {
                     {item.label}
                   </NavLink>
                 ))}
+                {isAuthenticated ? (
+                  <>
+                    <NavLink to="/profile" className={linkClasses}>
+                      {player?.username || 'Profile'}
+                    </NavLink>
+                    <button type="button" onClick={logout} className="ghost-button text-xs">
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <NavLink to="/login" className={linkClasses}>
+                    Sign In
+                  </NavLink>
+                )}
                 <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
                   <Swords className="mr-2 h-4 w-4" />
                   Play Game
