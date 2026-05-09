@@ -28,7 +28,7 @@ export async function uploadHighlightImage({
   ].join('/')
 
   const blob = await put(filePath, imageBuffer, {
-    access: 'public',
+    access: 'private',
     addRandomSuffix: true,
     contentType: contentType || 'image/png'
   })

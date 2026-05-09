@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, BrainCircuit, RefreshCw, ShieldAlert, Sparkles, Swords } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import AuthenticatedImage from '../components/AuthenticatedImage'
 import { fetchJson } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -196,7 +197,12 @@ export default function HighlightDetail() {
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr),minmax(0,0.85fr)]">
           <div className="panel-card overflow-hidden">
             <div className="aspect-[16/10] bg-arena-void/80">
-              <img src={highlight.imageUrl} alt={`${highlight.username} battle highlight`} className="h-full w-full object-cover" />
+              <AuthenticatedImage
+                src={`/api/highlights/${highlight.id}/image`}
+                token={token}
+                alt={`${highlight.username} battle highlight`}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
               {stats.map((stat) => (

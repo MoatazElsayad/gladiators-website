@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, BrainCircuit, Lock, Sparkles, Sword } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import AuthenticatedImage from '../components/AuthenticatedImage'
 import { fetchJson } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -165,8 +166,9 @@ export default function AiCoach() {
               <article key={highlight.id} className="panel-card overflow-hidden">
                 <div className="grid gap-0 md:grid-cols-[280px,1fr]">
                   <div className="h-full min-h-[220px] bg-arena-void/70">
-                    <img
-                      src={highlight.imageUrl}
+                    <AuthenticatedImage
+                      src={`/api/highlights/${highlight.id}/image`}
+                      token={token}
                       alt={`${highlight.username} battle highlight`}
                       className="h-full w-full object-cover"
                       loading="lazy"
