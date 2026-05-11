@@ -6,6 +6,7 @@ import AuthenticatedImage from './AuthenticatedImage'
 export default function HighlightClipPlayer({ highlight, token }) {
   const [objectUrl, setObjectUrl] = useState('')
   const [failed, setFailed] = useState(false)
+  const [failureReason, setFailureReason] = useState('')
   const [playing, setPlaying] = useState(true)
   const [frameIndex, setFrameIndex] = useState(0)
 
@@ -19,6 +20,7 @@ export default function HighlightClipPlayer({ highlight, token }) {
     if (!hasClip || !token || !highlight?.id) {
       setObjectUrl('')
       setFailed(!hasClip)
+      setFailureReason(!hasClip ? 'Poster only: this highlight was uploaded without a replay clip.' : '')
       return undefined
     }
 
@@ -27,6 +29,7 @@ export default function HighlightClipPlayer({ highlight, token }) {
 
     async function loadClip() {
       setFailed(false)
+      setFailureReason('')
       try {
         const response = await fetch(`${apiBaseUrl}/api/highlights/${highlight.id}/clip-sheet`, {
           headers: {
@@ -49,6 +52,7 @@ export default function HighlightClipPlayer({ highlight, token }) {
         if (!cancelled) {
           setObjectUrl('')
           setFailed(true)
+          setFailureReason('Replay clip unavailable. Showing the poster capture.')
         }
       }
     }
@@ -96,13 +100,20 @@ export default function HighlightClipPlayer({ highlight, token }) {
 
   if (failed || !objectUrl) {
     return (
-      <div className="aspect-video bg-arena-void/80">
-        <AuthenticatedImage
-          src={`/api/highlights/${highlight.id}/image`}
-          token={token}
-          alt={`${highlight.username} battle highlight`}
-          className="h-full w-full object-cover"
-        />
+      <div>
+        <div className="aspect-video bg-arena-void/80">
+          <AuthenticatedImage
+            src={`/api/highlights/${highlight.id}/image`}
+            token={token}
+            alt={`${highlight.username} battle highlight`}
+            className="h-full w-full object-cover"
+          />
+        </div>
+        {failureReason && (
+          <div className="border-t border-arena-bronzeLight/20 bg-arena-panel/80 px-4 py-3 text-xs uppercase tracking-[0.14em] text-arena-sand">
+            {failureReason}
+          </div>
+        )}
       </div>
     )
   }
