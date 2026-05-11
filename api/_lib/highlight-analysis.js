@@ -24,6 +24,10 @@ function toStringArray(value, fallback = []) {
     .slice(0, 4)
 }
 
+function uniqueStrings(values) {
+  return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))]
+}
+
 function ruleBasedAnalysis(highlight, overrides = {}) {
   const attackLabel = formatAttackType(highlight.attackType, highlight.wasProjectile)
   const playerHpPct = percent(highlight.playerHpBefore, highlight.playerMaxHp)
@@ -110,6 +114,7 @@ function ruleBasedAnalysis(highlight, overrides = {}) {
     coachTip,
     model: overrides.model || 'rule-based',
     isVisual: Boolean(overrides.isVisual),
+    providerError: overrides.providerError || '',
     timingNote,
     spacingNote,
     attackChoiceNote,
@@ -135,10 +140,21 @@ function providerConfig() {
   }
 
   if (provider === 'openrouter') {
+    const models = uniqueStrings([
+      process.env.AI_COACH_MODEL,
+      process.env.OPENROUTER_MODEL,
+      process.env.OPENROUTER_FALLBACK_MODEL,
+      process.env.OPENROUTER_SECOND_FALLBACK_MODEL,
+      process.env.OPENROUTER_THIRD_FALLBACK_MODEL,
+      process.env.OPENROUTER_FOURTH_FALLBACK_MODEL,
+      'openai/gpt-4o-mini'
+    ])
+
     return {
       provider,
       baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, ''),
-      model: String(process.env.AI_COACH_MODEL || process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini').trim(),
+      model: models[0] || 'openai/gpt-4o-mini',
+      models,
       apiKey,
       siteUrl: String(process.env.OPENROUTER_SITE_URL || '').trim(),
       appTitle: String(process.env.OPENROUTER_APP_TITLE || 'Gladiators AI Coach').trim()
@@ -150,6 +166,7 @@ function providerConfig() {
       provider,
       baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, ''),
       model: String(process.env.AI_COACH_MODEL || 'gpt-4o-mini').trim(),
+      models: uniqueStrings([process.env.AI_COACH_MODEL, 'gpt-4o-mini']),
       apiKey,
       siteUrl: '',
       appTitle: ''
@@ -215,6 +232,7 @@ function sanitizeAiAnalysis(parsed, highlight, config) {
     coachTip,
     model: config.model,
     isVisual: true,
+    providerError: '',
     timingNote: timingNote || fallback.timingNote,
     spacingNote: spacingNote || fallback.spacingNote,
     attackChoiceNote: attackChoiceNote || fallback.attackChoiceNote,
@@ -223,7 +241,7 @@ function sanitizeAiAnalysis(parsed, highlight, config) {
   }
 }
 
-async function visualProviderAnalysis(highlight, config) {
+async function visualProviderAnalysis(highlight, config, model) {
   const dataUrl = await fetchPrivateBlobAsDataUrl(
     highlight.clipSheetUrl || highlight.imageUrl,
     highlight.clipSheetContentType || highlight.imageContentType || 'image/jpeg'
@@ -247,8 +265,12 @@ async function visualProviderAnalysis(highlight, config) {
     clipFps: highlight.clipFps
   }
 
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 45000)
+
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: 'POST',
+    signal: controller.signal,
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
@@ -256,8 +278,9 @@ async function visualProviderAnalysis(highlight, config) {
       ...(config.provider === 'openrouter' && config.appTitle ? { 'X-Title': config.appTitle } : {})
     },
     body: JSON.stringify({
-      model: config.model,
+      model,
       temperature: 0.35,
+      max_tokens: 700,
       messages: [
         {
           role: 'system',
@@ -281,15 +304,21 @@ async function visualProviderAnalysis(highlight, config) {
         }
       ]
     })
-  })
+  }).finally(() => clearTimeout(timeout))
 
   if (!response.ok) {
-    throw new Error(`AI coach provider failed with status ${response.status}.`)
+    let errorText = ''
+    try {
+      errorText = await response.text()
+    } catch (error) {
+      errorText = ''
+    }
+    throw new Error(`AI coach provider failed for ${model} with status ${response.status}. ${errorText}`.trim())
   }
 
   const payload = await response.json()
   const content = payload?.choices?.[0]?.message?.content
-  return sanitizeAiAnalysis(extractJson(content), highlight, config)
+  return sanitizeAiAnalysis(extractJson(content), highlight, { ...config, model })
 }
 
 export async function analyzeBattleHighlight(highlight) {
@@ -298,12 +327,31 @@ export async function analyzeBattleHighlight(highlight) {
     return ruleBasedAnalysis(highlight)
   }
 
+  const errors = []
+  for (const model of config.models || [config.model]) {
+    try {
+      return await visualProviderAnalysis(highlight, config, model)
+    } catch (error) {
+      const message = error?.name === 'AbortError'
+        ? `AI coach provider timed out for ${model}.`
+        : error?.message || `AI coach provider failed for ${model}.`
+      errors.push(message)
+      console.error('AI coach provider failed', {
+        model,
+        highlightId: highlight.id,
+        message
+      })
+    }
+  }
+
+  const providerError = errors.join(' | ').slice(0, 900)
   try {
-    return await visualProviderAnalysis(highlight, config)
-  } catch (error) {
     return ruleBasedAnalysis(highlight, {
       model: `${config.model}:fallback`,
-      isVisual: false
+      isVisual: false,
+      providerError
     })
+  } catch (error) {
+    return ruleBasedAnalysis(highlight)
   }
 }

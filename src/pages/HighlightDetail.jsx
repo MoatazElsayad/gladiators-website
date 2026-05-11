@@ -265,6 +265,11 @@ export default function HighlightDetail() {
                   Visual replay read
                 </span>
               )}
+              {highlight.analysisProviderError && (
+                <span className="status-pill border-amber-300/35 bg-amber-400/10 text-amber-100">
+                  Provider fallback
+                </span>
+              )}
             </div>
 
             {highlight.analysisStatus !== 'complete' ? (
@@ -288,6 +293,21 @@ export default function HighlightDetail() {
                   </p>
                   <p className="mt-3 text-sm leading-7 text-arena-sand">{highlight.analysisSummary}</p>
                 </div>
+
+                {highlight.analysisProviderError && (
+                  <div className="mt-5 rounded-3xl border border-amber-300/25 bg-amber-400/10 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
+                      Provider Fallback
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-amber-50">
+                      The replay is saved, but the visual model did not return a usable coach read. The page is showing
+                      the local fallback analysis.
+                    </p>
+                    <p className="mt-2 break-words text-xs leading-6 text-amber-100/80">
+                      {highlight.analysisProviderError}
+                    </p>
+                  </div>
+                )}
 
                 {coachCards.length > 0 && (
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
