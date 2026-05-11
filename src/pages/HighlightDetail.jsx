@@ -166,7 +166,7 @@ export default function HighlightDetail() {
     setAnalyzing(true)
     setErrorMessage('')
     try {
-      const payload = await fetchJson(`/api/highlights/${highlight.id}/analyze`, {
+      const payload = await fetchJson(`/api/highlights/${highlight.id}/analyze?force=1`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`

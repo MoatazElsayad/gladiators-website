@@ -32,6 +32,19 @@ export async function readJsonBody(req) {
     return req.body
   }
 
+  if (typeof req.body === 'string') {
+    const rawBody = req.body.trim()
+    if (!rawBody) {
+      return {}
+    }
+
+    try {
+      return JSON.parse(rawBody)
+    } catch (error) {
+      throw new Error('Request body must be valid JSON.')
+    }
+  }
+
   const chunks = []
   for await (const chunk of req) {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
