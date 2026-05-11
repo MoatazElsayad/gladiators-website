@@ -7,8 +7,7 @@ import { useAuth } from '../lib/auth'
 const navItems = [
   { label: 'Home', to: '/' },
   { label: 'Leaderboard', to: '/leaderboard' },
-  { label: 'AI Coach', to: '/coach' },
-  { label: 'Team Progress', to: '/team-progress' }
+  { label: 'AI Coach', to: '/coach' }
 ]
 
 const linkClasses = ({ isActive }) =>

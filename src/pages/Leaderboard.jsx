@@ -69,6 +69,95 @@ function normalizeLeaderboardRows(rows) {
   })
 }
 
+function LeaderboardLadder({ fighters }) {
+  if (fighters.length === 0) {
+    return null
+  }
+
+  const podium = [fighters[1], fighters[0], fighters[2]].filter(Boolean)
+  const ladderMeta = {
+    1: {
+      label: 'Champion',
+      step: 'lg:order-2 lg:min-h-[23rem]',
+      base: 'h-28 bg-gradient-to-t from-arena-gold/45 to-arena-gold/10 border-arena-gold/45',
+      ring: 'border-arena-gold/60 bg-arena-gold/15 text-arena-goldBright'
+    },
+    2: {
+      label: 'Second Step',
+      step: 'lg:order-1 lg:min-h-[19rem] lg:mt-16',
+      base: 'h-20 bg-gradient-to-t from-white/18 to-white/5 border-white/20',
+      ring: 'border-white/30 bg-white/10 text-arena-parchment'
+    },
+    3: {
+      label: 'Third Step',
+      step: 'lg:order-3 lg:min-h-[17rem] lg:mt-24',
+      base: 'h-16 bg-gradient-to-t from-[#CD7F32]/35 to-[#CD7F32]/10 border-[#CD7F32]/35',
+      ring: 'border-[#CD7F32]/45 bg-[#CD7F32]/12 text-[#ffd7b2]'
+    }
+  }
+
+  return (
+    <div className="panel-card mt-8 overflow-hidden p-5 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Glory Ladder</p>
+          <h2 className="mt-3 font-display text-3xl uppercase tracking-[0.14em] text-arena-goldBright">
+            Top Arena Steps
+          </h2>
+        </div>
+        <p className="max-w-xl text-sm leading-7 text-arena-sand">
+          The leading fighter takes the highest step. Second and third flank the champion so the hierarchy reads at a glance.
+        </p>
+      </div>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-3 lg:items-end">
+        {podium.map((fighter) => {
+          const rank = fighter.displayRank || fighter.rank
+          const meta = ladderMeta[rank] || ladderMeta[3]
+
+          return (
+            <motion.article
+              key={`${fighter.username}-podium`}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.5, delay: rank * 0.05 }}
+              className={`flex flex-col justify-end rounded-[28px] border border-arena-bronzeLight/25 bg-arena-void/60 p-4 ${meta.step}`}
+            >
+              <div className="rounded-[24px] border border-arena-bronzeLight/25 bg-arena-panel/80 p-5 text-center">
+                <div className={`mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full border text-lg font-bold ${meta.ring}`}>
+                  #{rank}
+                </div>
+                <img
+                  src={fighter.rankBadge}
+                  alt={`${fighter.title} rank badge`}
+                  className="mx-auto mt-4 h-20 w-20 object-contain drop-shadow-[0_0_18px_rgba(255,215,0,0.24)]"
+                  loading="lazy"
+                />
+                <p className="mt-4 font-display text-2xl uppercase tracking-[0.14em] text-arena-goldBright">
+                  {fighter.username}
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-arena-sand">{meta.label}</p>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl border border-arena-bronzeLight/20 bg-arena-void/65 px-3 py-2">
+                    <p className="text-[0.65rem] uppercase tracking-[0.16em] text-arena-sand">Score</p>
+                    <p className="mt-1 font-semibold text-arena-parchment">{fighter.score.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-2xl border border-arena-bronzeLight/20 bg-arena-void/65 px-3 py-2">
+                    <p className="text-[0.65rem] uppercase tracking-[0.16em] text-arena-sand">Wins</p>
+                    <p className="mt-1 font-semibold text-arena-parchment">{fighter.wins}</p>
+                  </div>
+                </div>
+              </div>
+              <div className={`mt-4 rounded-t-[18px] border ${meta.base}`} />
+            </motion.article>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function Leaderboard() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('score')
@@ -210,6 +299,8 @@ export default function Leaderboard() {
             </div>
           ))}
         </div>
+
+        <LeaderboardLadder fighters={filteredFighters.slice(0, 3)} />
 
         <div className="mt-8 flex flex-wrap gap-3">
           {sortOptions.map((option) => (

@@ -24,8 +24,8 @@ const featureCards = [
   },
   {
     icon: Trophy,
-    title: 'Persistent Glory',
-    text: 'Profiles, progress tracking, and leaderboards are at the heart of the Battle Arena experience.'
+    title: 'Connected Profiles',
+    text: 'Desktop battles feed the same web profile, rank badge, win rate, leaderboard position, and AI Coach history.'
   },
   {
     icon: Shield,
@@ -61,18 +61,18 @@ const rosterCards = [
 const battlePillars = [
   {
     icon: Crown,
-    title: 'Animated Lobbies',
-    text: 'The repo already supports live character preview and polished profile selection flows.'
+    title: 'Ranked Identity',
+    text: 'Every player carries a rank, current gladiator, recent match record, and unlock-ready profile presence.'
   },
   {
     icon: Flame,
-    title: 'Cinematic UX',
-    text: 'Damage text, arena HUDs, and dramatic game-over states give the combat loop real ceremony.'
+    title: 'AI Coach Moments',
+    text: 'The strongest attack can become a replay highlight with visual coaching and quick improvement notes.'
   },
   {
     icon: Sparkles,
-    title: 'Pixel Art Identity',
-    text: 'The landing page now leans into the game assets instead of drifting into generic fantasy styling.'
+    title: 'Arena Ladder',
+    text: 'The leaderboard now reads like a competitive ladder, not just a table of names and numbers.'
   }
 ]
 
@@ -210,12 +210,11 @@ export default function Home() {
               Gladiators
             </h1>
             <p className="mt-4 max-w-2xl text-lg uppercase tracking-[0.18em] text-arena-parchmentSoft sm:text-xl">
-              Battle Arena reborn for the web
+              Fight, rank up, and study your best moments
             </p>
             <p className="mt-6 max-w-2xl text-base leading-8 text-arena-sand sm:text-lg">
-              A fast-paced 2D pixel-art fighting game built with C++ and Qt 6. Enter the Battle Arena,
-              choose your class, and fight through a world of blood-red banners, ancient steel, and
-              leaderboard-driven glory.
+              A fast-paced 2D pixel-art fighting game built with C++ and Qt 6. Your desktop battles now
+              power a live web profile, arena ladder, replay highlights, and AI Coach feedback.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -224,7 +223,7 @@ export default function Home() {
                 Enter the Arena
               </button>
               <Link to="/leaderboard" className="stone-button text-xs">
-                View Leaderboard
+                View Arena Ladder
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -232,8 +231,8 @@ export default function Home() {
             <div className="mt-10 rounded-[28px] border border-arena-bronzeLight/30 bg-black/20 p-5 backdrop-blur-sm sm:p-6">
               <p className="text-xs uppercase tracking-[0.22em] text-arena-sand">Arena Oath</p>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-arena-parchment">
-                Action-packed combat, fluid mechanics, rich pixel art, and a progression system built to
-                reward every victory earned in the dust of the arena.
+                Every uploaded fight becomes part of a public ladder and a private player story: rank,
+                current fighter, recent battles, highlight replays, and coach notes.
               </p>
             </div>
 
@@ -371,7 +370,7 @@ export default function Home() {
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.16em] text-arena-sand">
                   <span>Score {match.score.toLocaleString()}</span>
-                  <span>•</span>
+                  <span>/</span>
                   <span>{match.playedAtLabel}</span>
                 </div>
               </div>
@@ -476,29 +475,35 @@ export default function Home() {
               <h2 className="mt-4 section-title">Fight For Eternal Glory</h2>
               <p className="mt-5 section-copy">
                 Battle Arena is an action-packed pixel-art experience featuring fluid character animation,
-                responsive menu systems, live class previews, secure player profiles, and a scalable
-                leaderboard-ready progression loop.
+                responsive menu systems, live class previews, secure player profiles, replay highlights,
+                AI Coach analysis, and a competitive ladder connected to the desktop game.
               </p>
               <p className="mt-5 section-copy">
-                This landing page now leans harder into the actual game identity: Roman metals, blood-red
-                accents, real character art, and a presentation that feels closer to the in-game lobby.
+                This site now acts as the arena companion: visitors can see the leaderboard, while signed-in
+                players can inspect their rank, current gladiator, match record, and best combat moments.
               </p>
             </div>
 
             <div className="rounded-[28px] border border-dashed border-arena-gold/35 bg-arena-void/70 p-6 sm:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Future Embed Zone</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">Player Command</p>
               <h3 className="mt-4 font-display text-3xl uppercase tracking-[0.16em] text-arena-goldBright">
-                Playable Build Placeholder
+                Web Profile Ready
               </h3>
               <p className="mt-4 text-sm leading-7 text-arena-sand">
-                The actual game will be embedded here later. The structure, CTA flow, and spacing are ready
-                for the live build.
+                Use the website to check your rank, review AI Coach highlights, and track how your current
+                fighter performs after each uploaded battle.
               </p>
-              <div className="mt-8 rounded-[24px] border border-arena-bronzeLight/25 bg-gradient-to-br from-arena-stone/70 to-arena-ember/90 px-6 py-10 text-center">
-                <p className="font-display text-2xl uppercase tracking-[0.16em] text-arena-gold">Game Portal Ready</p>
-                <p className="mt-3 text-sm text-arena-parchment">
-                  Drop the production game iframe, canvas, or launcher module into this slot.
-                </p>
+              <div className="mt-8 grid gap-3">
+                <Link to="/profile" className="stone-button text-xs">
+                  Open Profile
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+                <Link to="/coach" className="ghost-button text-xs">
+                  Review AI Coach
+                </Link>
+                <Link to="/leaderboard" className="ghost-button text-xs">
+                  Climb Leaderboard
+                </Link>
               </div>
             </div>
           </div>

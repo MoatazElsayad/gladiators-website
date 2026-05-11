@@ -5,7 +5,6 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Home from './pages/Home'
 import Leaderboard from './pages/Leaderboard'
-import TeamProgress from './pages/TeamProgress'
 import AiCoach from './pages/AiCoach'
 import HighlightDetail from './pages/HighlightDetail'
 import AuthPage from './pages/AuthPage'
@@ -43,7 +42,6 @@ const router = createHashRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'leaderboard', element: <Leaderboard /> },
-      { path: 'team-progress', element: <TeamProgress /> },
       { path: 'coach', element: <AiCoach /> },
       { path: 'coach/:highlightId', element: <HighlightDetail /> },
       { path: 'login', element: <AuthPage mode="login" /> },

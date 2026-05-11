@@ -4,8 +4,7 @@ import { NavLink } from 'react-router-dom'
 const footerLinks = [
   { label: 'Home', to: '/' },
   { label: 'Leaderboard', to: '/leaderboard' },
-  { label: 'AI Coach', to: '/coach' },
-  { label: 'Team Progress', to: '/team-progress' }
+  { label: 'AI Coach', to: '/coach' }
 ]
 
 const socialLinks = [

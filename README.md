@@ -20,7 +20,8 @@ Official React + Vite landing page for **Gladiators / Battle Arena**, styled to 
 
 - `Home`
 - `Leaderboard`
-- `Team Progress`
+- `AI Coach`
+- `Player Profile`
 
 ## Features
 
@@ -29,7 +30,7 @@ Official React + Vite landing page for **Gladiators / Battle Arena**, styled to 
 - Tailwind CSS v3 with Gladiators branding tokens
 - Framer Motion page and component animations
 - Lucide React icons
-- LocalStorage-backed team todo board
+- Live player profile, leaderboard, highlights, and AI Coach screens
 - Responsive dark-only interface
 - Real character art copied from the main Gladiators repo
 

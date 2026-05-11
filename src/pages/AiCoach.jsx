@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, BrainCircuit, Lock, Sparkles, Sword } from 'lucide-react'
+import { ArrowRight, Lock, Sparkles, Sword } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AuthenticatedImage from '../components/AuthenticatedImage'
