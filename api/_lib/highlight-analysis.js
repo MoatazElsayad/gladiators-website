@@ -13,7 +13,18 @@ function percent(value, max) {
   return Math.round((Math.max(0, value) / Math.max(1, max)) * 100)
 }
 
-export async function analyzeBattleHighlight(highlight) {
+function toStringArray(value, fallback = []) {
+  if (!Array.isArray(value)) {
+    return fallback
+  }
+
+  return value
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 4)
+}
+
+function ruleBasedAnalysis(highlight, overrides = {}) {
   const attackLabel = formatAttackType(highlight.attackType, highlight.wasProjectile)
   const playerHpPct = percent(highlight.playerHpBefore, highlight.playerMaxHp)
   const enemyDrop = Math.max(0, highlight.enemyHpBefore - highlight.enemyHpAfter)
@@ -79,6 +90,184 @@ export async function analyzeBattleHighlight(highlight) {
     summary,
     strengths: strengths.slice(0, 3),
     mistakes: mistakes.slice(0, 3),
-    coachTip
+    coachTip,
+    model: overrides.model || 'rule-based',
+    isVisual: Boolean(overrides.isVisual)
+  }
+}
+
+function providerConfig() {
+  const provider = String(process.env.AI_COACH_PROVIDER || 'none').trim().toLowerCase()
+  const apiKey = String(process.env.AI_COACH_API_KEY || '').trim()
+  if (!apiKey || provider === 'none') {
+    return null
+  }
+
+  if (provider === 'openrouter') {
+    return {
+      provider,
+      baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, ''),
+      model: String(process.env.AI_COACH_MODEL || 'openai/gpt-4o-mini').trim(),
+      apiKey
+    }
+  }
+
+  if (provider === 'openai') {
+    return {
+      provider,
+      baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, ''),
+      model: String(process.env.AI_COACH_MODEL || 'gpt-4o-mini').trim(),
+      apiKey
+    }
+  }
+
+  return null
+}
+
+async function fetchPrivateBlobAsDataUrl(url, contentType) {
+  if (!url) {
+    return ''
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN || ''}`
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error('Could not load replay for visual analysis.')
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer())
+  return `data:${contentType || response.headers.get('content-type') || 'image/jpeg'};base64,${buffer.toString('base64')}`
+}
+
+function extractJson(text) {
+  const raw = String(text || '').trim()
+  if (!raw) {
+    throw new Error('AI response was empty.')
+  }
+
+  try {
+    return JSON.parse(raw)
+  } catch (error) {
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    if (start >= 0 && end > start) {
+      return JSON.parse(raw.slice(start, end + 1))
+    }
+    throw error
+  }
+}
+
+function sanitizeAiAnalysis(parsed, highlight, config) {
+  const fallback = ruleBasedAnalysis(highlight)
+  const timingNote = String(parsed.timingNote || parsed.timing_note || '').trim()
+  const spacingNote = String(parsed.spacingNote || parsed.spacing_note || '').trim()
+  const attackChoiceNote = String(parsed.attackChoiceNote || parsed.attack_choice_note || '').trim()
+  const mistakes = toStringArray(parsed.mistakes, fallback.mistakes)
+  if (timingNote) {
+    mistakes.push(`Timing: ${timingNote}`)
+  }
+  if (spacingNote) {
+    mistakes.push(`Spacing: ${spacingNote}`)
+  }
+
+  const coachTip = String(parsed.coachTip || parsed.coach_tip || fallback.coachTip).trim()
+  const finalCoachTip = attackChoiceNote ? `${coachTip} Attack choice: ${attackChoiceNote}` : coachTip
+
+  return {
+    status: 'complete',
+    title: String(parsed.title || fallback.title).trim(),
+    summary: String(parsed.summary || fallback.summary).trim(),
+    strengths: toStringArray(parsed.strengths, fallback.strengths),
+    mistakes: mistakes.slice(0, 4),
+    coachTip: finalCoachTip,
+    model: config.model,
+    isVisual: true
+  }
+}
+
+async function visualProviderAnalysis(highlight, config) {
+  const dataUrl = await fetchPrivateBlobAsDataUrl(
+    highlight.clipSheetUrl || highlight.imageUrl,
+    highlight.clipSheetContentType || highlight.imageContentType || 'image/jpeg'
+  )
+
+  const metadata = {
+    characterName: highlight.characterName,
+    enemyName: highlight.enemyName,
+    mode: highlight.mode,
+    attackType: highlight.attackType,
+    damage: highlight.damage,
+    wasProjectile: highlight.wasProjectile,
+    wasFinisher: highlight.wasFinisher,
+    playerHpBefore: highlight.playerHpBefore,
+    playerHpAfter: highlight.playerHpAfter,
+    playerMaxHp: highlight.playerMaxHp,
+    enemyHpBefore: highlight.enemyHpBefore,
+    enemyHpAfter: highlight.enemyHpAfter,
+    clipKind: highlight.clipKind,
+    clipFrameCount: highlight.clipFrameCount,
+    clipFps: highlight.clipFps
+  }
+
+  const response = await fetch(`${config.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: config.model,
+      temperature: 0.35,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a concise fighting-game coach for a 2D gladiator game. Return only valid JSON with keys: title, summary, strengths, mistakes, coachTip, timingNote, spacingNote, attackChoiceNote. strengths and mistakes must be arrays of short strings.'
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Analyze this 4-second sprite-sheet replay. It is ordered left-to-right, top-to-bottom at ${highlight.clipFps || 10} FPS. Use the metadata and visible spacing/timing. Metadata: ${JSON.stringify(metadata)}`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: dataUrl
+              }
+            }
+          ]
+        }
+      ]
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(`AI coach provider failed with status ${response.status}.`)
+  }
+
+  const payload = await response.json()
+  const content = payload?.choices?.[0]?.message?.content
+  return sanitizeAiAnalysis(extractJson(content), highlight, config)
+}
+
+export async function analyzeBattleHighlight(highlight) {
+  const config = providerConfig()
+  if (!config || !highlight.clipSheetUrl) {
+    return ruleBasedAnalysis(highlight)
+  }
+
+  try {
+    return await visualProviderAnalysis(highlight, config)
+  } catch (error) {
+    return ruleBasedAnalysis(highlight, {
+      model: `${config.model}:fallback`,
+      isVisual: false
+    })
   }
 }

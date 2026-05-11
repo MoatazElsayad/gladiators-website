@@ -110,17 +110,38 @@ async function ensureSchema() {
           level_name TEXT,
           image_url TEXT NOT NULL,
           image_content_type TEXT,
+          clip_sheet_url TEXT,
+          clip_sheet_content_type TEXT,
+          clip_kind TEXT,
+          clip_frame_count INTEGER,
+          clip_fps INTEGER,
+          clip_frame_width INTEGER,
+          clip_frame_height INTEGER,
+          clip_duration_seconds DOUBLE PRECISION,
           analysis_status TEXT NOT NULL DEFAULT 'pending',
           analysis_title TEXT,
           analysis_summary TEXT,
           analysis_strengths JSONB NOT NULL DEFAULT '[]'::jsonb,
           analysis_mistakes JSONB NOT NULL DEFAULT '[]'::jsonb,
           analysis_coach_tip TEXT,
+          analysis_model TEXT,
+          analysis_is_visual BOOLEAN NOT NULL DEFAULT FALSE,
           captured_at TIMESTAMPTZ NOT NULL,
           created_at TIMESTAMPTZ NOT NULL,
           updated_at TIMESTAMPTZ NOT NULL
         );
       `
+
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_sheet_url TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_sheet_content_type TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_kind TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_frame_count INTEGER;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_fps INTEGER;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_frame_width INTEGER;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_frame_height INTEGER;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_duration_seconds DOUBLE PRECISION;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_model TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_is_visual BOOLEAN NOT NULL DEFAULT FALSE;`
 
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_player_id ON matches(player_id);`
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_played_at ON matches(played_at DESC);`
@@ -870,12 +891,22 @@ function mapHighlightRow(row) {
     levelName: row.level_name,
     imageUrl: row.image_url,
     imageContentType: row.image_content_type,
+    clipSheetUrl: row.clip_sheet_url || '',
+    clipSheetContentType: row.clip_sheet_content_type || '',
+    clipKind: row.clip_kind || '',
+    clipFrameCount: toInteger(row.clip_frame_count, 0),
+    clipFps: toInteger(row.clip_fps, 0),
+    clipFrameWidth: toInteger(row.clip_frame_width, 0),
+    clipFrameHeight: toInteger(row.clip_frame_height, 0),
+    clipDurationSeconds: toFloat(row.clip_duration_seconds, 0),
     analysisStatus: row.analysis_status || 'pending',
     analysisTitle: row.analysis_title || '',
     analysisSummary: row.analysis_summary || '',
     analysisStrengths: toStringArray(row.analysis_strengths),
     analysisMistakes: toStringArray(row.analysis_mistakes),
     analysisCoachTip: row.analysis_coach_tip || '',
+    analysisModel: row.analysis_model || '',
+    analysisIsVisual: Boolean(row.analysis_is_visual),
     capturedAt: row.captured_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -953,6 +984,14 @@ export async function createBattleHighlight(payload) {
       level_name,
       image_url,
       image_content_type,
+      clip_sheet_url,
+      clip_sheet_content_type,
+      clip_kind,
+      clip_frame_count,
+      clip_fps,
+      clip_frame_width,
+      clip_frame_height,
+      clip_duration_seconds,
       analysis_status,
       captured_at,
       created_at,
@@ -982,6 +1021,14 @@ export async function createBattleHighlight(payload) {
       ${payload.levelName || null},
       ${payload.imageUrl},
       ${payload.imageContentType || null},
+      ${payload.clipSheetUrl || null},
+      ${payload.clipSheetContentType || null},
+      ${payload.clipKind || null},
+      ${optionalNonNegativeInteger(payload.clipFrameCount)},
+      ${optionalNonNegativeInteger(payload.clipFps)},
+      ${optionalNonNegativeInteger(payload.clipFrameWidth)},
+      ${optionalNonNegativeInteger(payload.clipFrameHeight)},
+      ${toFloat(payload.clipDurationSeconds, 0) || null},
       ${payload.analysisStatus || 'pending'},
       ${toIsoDate(payload.capturedAt)},
       ${now},
@@ -1068,6 +1115,8 @@ export async function saveHighlightAnalysis(id, analysis) {
       analysis_strengths = ${JSON.stringify(toStringArray(analysis?.strengths))}::jsonb,
       analysis_mistakes = ${JSON.stringify(toStringArray(analysis?.mistakes))}::jsonb,
       analysis_coach_tip = ${analysis?.coachTip || null},
+      analysis_model = ${analysis?.model || null},
+      analysis_is_visual = ${Boolean(analysis?.isVisual)},
       updated_at = ${new Date().toISOString()}
     WHERE id = ${highlightId}
     RETURNING *;

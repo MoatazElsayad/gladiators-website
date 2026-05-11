@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, BrainCircuit, RefreshCw, ShieldAlert, Sparkles, Swords } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import AuthenticatedImage from '../components/AuthenticatedImage'
+import HighlightClipPlayer from '../components/HighlightClipPlayer'
 import { fetchJson } from '../lib/api'
 import { useAuth } from '../lib/auth'
 
@@ -196,14 +196,7 @@ export default function HighlightDetail() {
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.15fr),minmax(0,0.85fr)]">
           <div className="panel-card overflow-hidden">
-            <div className="aspect-[16/10] bg-arena-void/80">
-              <AuthenticatedImage
-                src={`/api/highlights/${highlight.id}/image`}
-                token={token}
-                alt={`${highlight.username} battle highlight`}
-                className="h-full w-full object-cover"
-              />
-            </div>
+            <HighlightClipPlayer highlight={highlight} token={token} />
             <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
               {stats.map((stat) => (
                 <div key={stat.label} className="rounded-3xl border border-arena-bronzeLight/25 bg-arena-panel/70 px-4 py-3">
@@ -232,6 +225,11 @@ export default function HighlightDetail() {
                     ? 'Analyzing...'
                     : 'Analysis pending'}
               </span>
+              {highlight.analysisIsVisual && (
+                <span className="status-pill border-sky-300/35 bg-sky-400/10 text-sky-100">
+                  Visual replay read
+                </span>
+              )}
             </div>
 
             {highlight.analysisStatus !== 'complete' ? (

@@ -35,3 +35,29 @@ export async function uploadHighlightImage({
 
   return blob.url
 }
+
+export async function uploadHighlightClipSheet({
+  username,
+  attackType,
+  capturedAt,
+  clipBuffer,
+  contentType
+}) {
+  if (!clipBuffer || clipBuffer.length === 0) {
+    return null
+  }
+
+  const filePath = [
+    'battle-highlight-clips',
+    sanitizeSegment(username, 'unknown-gladiator'),
+    `${sanitizeSegment(capturedAt, 'capture')}-${sanitizeSegment(attackType, 'attack')}-sheet.jpg`
+  ].join('/')
+
+  const blob = await put(filePath, clipBuffer, {
+    access: 'private',
+    addRandomSuffix: true,
+    contentType: contentType || 'image/jpeg'
+  })
+
+  return blob.url
+}

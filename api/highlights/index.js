@@ -1,4 +1,4 @@
-import { uploadHighlightImage } from '../_lib/blob-store.js'
+import { uploadHighlightClipSheet, uploadHighlightImage } from '../_lib/blob-store.js'
 import { bearerTokenFromRequest, verifySessionToken } from '../_lib/auth.js'
 import {
   createBattleHighlight,
@@ -26,6 +26,14 @@ function ensureAllowedImageType(fileMimeType) {
   const safeType = String(fileMimeType || '').trim().toLowerCase()
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(safeType)) {
     throw new Error('Only PNG, JPEG, or WEBP highlight images are allowed.')
+  }
+  return safeType
+}
+
+function ensureAllowedClipType(fileMimeType) {
+  const safeType = String(fileMimeType || '').trim().toLowerCase()
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(safeType)) {
+    throw new Error('Only JPEG, PNG, or WEBP highlight clips are allowed.')
   }
   return safeType
 }
@@ -98,10 +106,14 @@ export default async function handler(req, res) {
       return
     }
 
-    const { fields, fileBuffer, fileMimeType } = await readMultipartBody(req)
-    const contentType = ensureAllowedImageType(fileMimeType)
+    const { fields, files, fileBuffer, fileMimeType } = await readMultipartBody(req, {
+      maxFileSize: 4 * 1024 * 1024
+    })
+    const imageFile = files?.image || { buffer: fileBuffer, mimeType: fileMimeType }
+    const clipFile = files?.clipSheet || null
+    const contentType = ensureAllowedImageType(imageFile?.mimeType)
 
-    if (!fileBuffer || fileBuffer.length === 0) {
+    if (!imageFile?.buffer || imageFile.buffer.length === 0) {
       throw new Error('Highlight image is required.')
     }
 
@@ -114,9 +126,22 @@ export default async function handler(req, res) {
       username,
       attackType: fields.attackType,
       capturedAt: fields.capturedAt,
-      imageBuffer: fileBuffer,
+      imageBuffer: imageFile.buffer,
       contentType
     })
+
+    let clipSheetUrl = null
+    let clipSheetContentType = null
+    if (clipFile?.buffer?.length) {
+      clipSheetContentType = ensureAllowedClipType(clipFile.mimeType)
+      clipSheetUrl = await uploadHighlightClipSheet({
+        username,
+        attackType: fields.attackType,
+        capturedAt: fields.capturedAt,
+        clipBuffer: clipFile.buffer,
+        contentType: clipSheetContentType
+      })
+    }
 
     const highlight = await createBattleHighlight({
       username,
@@ -142,6 +167,14 @@ export default async function handler(req, res) {
       levelName: String(fields.levelName || '').trim() || null,
       imageUrl,
       imageContentType: contentType,
+      clipSheetUrl,
+      clipSheetContentType,
+      clipKind: String(fields.clipKind || '').trim() || null,
+      clipFrameCount: Math.max(0, toInteger(fields.clipFrameCount, 0)),
+      clipFps: Math.max(0, toInteger(fields.clipFps, 0)),
+      clipFrameWidth: Math.max(0, toInteger(fields.clipFrameWidth, 0)),
+      clipFrameHeight: Math.max(0, toInteger(fields.clipFrameHeight, 0)),
+      clipDurationSeconds: Math.max(0, toFloat(fields.clipDurationSeconds, 0)),
       capturedAt: fields.capturedAt
     })
 
