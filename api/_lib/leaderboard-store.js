@@ -126,6 +126,11 @@ async function ensureSchema() {
           analysis_coach_tip TEXT,
           analysis_model TEXT,
           analysis_is_visual BOOLEAN NOT NULL DEFAULT FALSE,
+          analysis_timing_note TEXT,
+          analysis_spacing_note TEXT,
+          analysis_attack_choice_note TEXT,
+          analysis_risk_note TEXT,
+          analysis_next_drill TEXT,
           captured_at TIMESTAMPTZ NOT NULL,
           created_at TIMESTAMPTZ NOT NULL,
           updated_at TIMESTAMPTZ NOT NULL
@@ -142,6 +147,11 @@ async function ensureSchema() {
       await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS clip_duration_seconds DOUBLE PRECISION;`
       await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_model TEXT;`
       await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_is_visual BOOLEAN NOT NULL DEFAULT FALSE;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_timing_note TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_spacing_note TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_attack_choice_note TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_risk_note TEXT;`
+      await sql`ALTER TABLE battle_highlights ADD COLUMN IF NOT EXISTS analysis_next_drill TEXT;`
 
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_player_id ON matches(player_id);`
       await sql`CREATE INDEX IF NOT EXISTS idx_matches_played_at ON matches(played_at DESC);`
@@ -907,6 +917,11 @@ function mapHighlightRow(row) {
     analysisCoachTip: row.analysis_coach_tip || '',
     analysisModel: row.analysis_model || '',
     analysisIsVisual: Boolean(row.analysis_is_visual),
+    analysisTimingNote: row.analysis_timing_note || '',
+    analysisSpacingNote: row.analysis_spacing_note || '',
+    analysisAttackChoiceNote: row.analysis_attack_choice_note || '',
+    analysisRiskNote: row.analysis_risk_note || '',
+    analysisNextDrill: row.analysis_next_drill || '',
     capturedAt: row.captured_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -1117,6 +1132,11 @@ export async function saveHighlightAnalysis(id, analysis) {
       analysis_coach_tip = ${analysis?.coachTip || null},
       analysis_model = ${analysis?.model || null},
       analysis_is_visual = ${Boolean(analysis?.isVisual)},
+      analysis_timing_note = ${analysis?.timingNote || null},
+      analysis_spacing_note = ${analysis?.spacingNote || null},
+      analysis_attack_choice_note = ${analysis?.attackChoiceNote || null},
+      analysis_risk_note = ${analysis?.riskNote || null},
+      analysis_next_drill = ${analysis?.nextDrill || null},
       updated_at = ${new Date().toISOString()}
     WHERE id = ${highlightId}
     RETURNING *;

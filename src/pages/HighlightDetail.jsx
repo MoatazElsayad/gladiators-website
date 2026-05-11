@@ -123,6 +123,41 @@ export default function HighlightDetail() {
     ]
   }, [highlight])
 
+  const coachCards = useMemo(() => {
+    if (!highlight) {
+      return []
+    }
+
+    return [
+      {
+        label: 'Timing',
+        value: highlight.analysisTimingNote,
+        tone: 'border-sky-300/25 bg-sky-400/10 text-sky-100'
+      },
+      {
+        label: 'Spacing',
+        value: highlight.analysisSpacingNote,
+        tone: 'border-emerald-300/25 bg-emerald-400/10 text-emerald-100'
+      },
+      {
+        label: 'Attack Choice',
+        value: highlight.analysisAttackChoiceNote,
+        tone: 'border-arena-gold/25 bg-arena-gold/10 text-arena-parchment'
+      },
+      {
+        label: 'Risk',
+        value: highlight.analysisRiskNote,
+        tone: 'border-arena-bloodGlow/25 bg-arena-blood/10 text-[#ffe4e4]'
+      },
+      {
+        label: 'Next Drill',
+        value: highlight.analysisNextDrill,
+        tone: 'border-arena-bronzeLight/25 bg-arena-panel/70 text-arena-parchment',
+        wide: true
+      }
+    ].filter((card) => String(card.value || '').trim())
+  }, [highlight])
+
   const retryAnalysis = async () => {
     if (!highlight) {
       return
@@ -136,7 +171,7 @@ export default function HighlightDetail() {
         headers: {
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({ force: true })
       })
       setHighlight(payload.highlight || null)
     } catch (error) {
@@ -253,6 +288,24 @@ export default function HighlightDetail() {
                   </p>
                   <p className="mt-3 text-sm leading-7 text-arena-sand">{highlight.analysisSummary}</p>
                 </div>
+
+                {coachCards.length > 0 && (
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {coachCards.map((card) => (
+                      <div
+                        key={card.label}
+                        className={`rounded-3xl border px-4 py-4 ${card.tone} ${
+                          card.wide ? 'sm:col-span-2' : ''
+                        }`}
+                      >
+                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-arena-sand">
+                          {card.label}
+                        </p>
+                        <p className="mt-2 text-sm leading-7">{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-5 grid gap-5 lg:grid-cols-2">
                   <div className="rounded-3xl border border-emerald-400/25 bg-emerald-400/10 px-5 py-5">

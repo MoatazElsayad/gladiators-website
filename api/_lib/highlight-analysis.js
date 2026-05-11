@@ -83,6 +83,23 @@ function ruleBasedAnalysis(highlight, overrides = {}) {
     : highlight.wasFinisher
       ? 'Keep looking for this same punish timing, but do not rush the first swing that creates it.'
       : 'Treat this kind of opening as a two-step sequence: land the hit, then claim the next space before attacking again.'
+  const timingNote = highlight.wasFinisher
+    ? 'The decisive hit landed before the opponent could reset their guard.'
+    : 'The hit timing was useful, but the follow-up window matters more than the first contact.'
+  const spacingNote = highlight.wasProjectile
+    ? 'You created value from range; keep enough distance to make the next projectile or step-in safe.'
+    : 'You were close enough to confirm melee damage, so leave yourself room to recover after the swing.'
+  const attackChoiceNote = highlight.attackType === 'attack_3'
+    ? 'The heavy option paid off because the opening was already real.'
+    : highlight.attackType === 'attack_2'
+      ? 'Attack 2 was a good middle route: stronger than a poke without fully overcommitting.'
+      : 'Attack 1 was safe, but look for chances to route into a stronger punish.'
+  const riskNote = playerHpPct <= 35
+    ? 'Low health made the exchange dangerous; one mistimed recovery could have flipped the round.'
+    : 'The main risk is swinging again before confirming the opponent recovery state.'
+  const nextDrill = highlight.wasProjectile
+    ? 'Practice: land a ranged hit, step forward once, then wait half a beat before the next action.'
+    : 'Practice: after a melee hit, backstep once and re-enter only if the opponent whiffs.'
 
   return {
     status: 'complete',
@@ -92,13 +109,27 @@ function ruleBasedAnalysis(highlight, overrides = {}) {
     mistakes: mistakes.slice(0, 3),
     coachTip,
     model: overrides.model || 'rule-based',
-    isVisual: Boolean(overrides.isVisual)
+    isVisual: Boolean(overrides.isVisual),
+    timingNote,
+    spacingNote,
+    attackChoiceNote,
+    riskNote,
+    nextDrill
   }
 }
 
 function providerConfig() {
-  const provider = String(process.env.AI_COACH_PROVIDER || 'none').trim().toLowerCase()
-  const apiKey = String(process.env.AI_COACH_API_KEY || '').trim()
+  const fallbackProvider = process.env.OPENROUTER_API_KEY
+    ? 'openrouter'
+    : process.env.OPENAI_API_KEY
+      ? 'openai'
+      : 'none'
+  const provider = String(process.env.AI_COACH_PROVIDER || fallbackProvider).trim().toLowerCase()
+  const apiKey = String(
+    process.env.AI_COACH_API_KEY ||
+      (provider === 'openrouter' ? process.env.OPENROUTER_API_KEY : '') ||
+      (provider === 'openai' ? process.env.OPENAI_API_KEY : '')
+  ).trim()
   if (!apiKey || provider === 'none') {
     return null
   }
@@ -107,8 +138,10 @@ function providerConfig() {
     return {
       provider,
       baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, ''),
-      model: String(process.env.AI_COACH_MODEL || 'openai/gpt-4o-mini').trim(),
-      apiKey
+      model: String(process.env.AI_COACH_MODEL || process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini').trim(),
+      apiKey,
+      siteUrl: String(process.env.OPENROUTER_SITE_URL || '').trim(),
+      appTitle: String(process.env.OPENROUTER_APP_TITLE || 'Gladiators AI Coach').trim()
     }
   }
 
@@ -117,7 +150,9 @@ function providerConfig() {
       provider,
       baseUrl: String(process.env.AI_COACH_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, ''),
       model: String(process.env.AI_COACH_MODEL || 'gpt-4o-mini').trim(),
-      apiKey
+      apiKey,
+      siteUrl: '',
+      appTitle: ''
     }
   }
 
@@ -166,26 +201,25 @@ function sanitizeAiAnalysis(parsed, highlight, config) {
   const timingNote = String(parsed.timingNote || parsed.timing_note || '').trim()
   const spacingNote = String(parsed.spacingNote || parsed.spacing_note || '').trim()
   const attackChoiceNote = String(parsed.attackChoiceNote || parsed.attack_choice_note || '').trim()
-  const mistakes = toStringArray(parsed.mistakes, fallback.mistakes)
-  if (timingNote) {
-    mistakes.push(`Timing: ${timingNote}`)
-  }
-  if (spacingNote) {
-    mistakes.push(`Spacing: ${spacingNote}`)
-  }
+  const riskNote = String(parsed.riskNote || parsed.risk_note || '').trim()
+  const nextDrill = String(parsed.nextDrill || parsed.next_drill || '').trim()
 
   const coachTip = String(parsed.coachTip || parsed.coach_tip || fallback.coachTip).trim()
-  const finalCoachTip = attackChoiceNote ? `${coachTip} Attack choice: ${attackChoiceNote}` : coachTip
 
   return {
     status: 'complete',
     title: String(parsed.title || fallback.title).trim(),
     summary: String(parsed.summary || fallback.summary).trim(),
     strengths: toStringArray(parsed.strengths, fallback.strengths),
-    mistakes: mistakes.slice(0, 4),
-    coachTip: finalCoachTip,
+    mistakes: toStringArray(parsed.mistakes, fallback.mistakes),
+    coachTip,
     model: config.model,
-    isVisual: true
+    isVisual: true,
+    timingNote: timingNote || fallback.timingNote,
+    spacingNote: spacingNote || fallback.spacingNote,
+    attackChoiceNote: attackChoiceNote || fallback.attackChoiceNote,
+    riskNote: riskNote || fallback.riskNote,
+    nextDrill: nextDrill || fallback.nextDrill
   }
 }
 
@@ -217,7 +251,9 @@ async function visualProviderAnalysis(highlight, config) {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(config.provider === 'openrouter' && config.siteUrl ? { 'HTTP-Referer': config.siteUrl } : {}),
+      ...(config.provider === 'openrouter' && config.appTitle ? { 'X-Title': config.appTitle } : {})
     },
     body: JSON.stringify({
       model: config.model,
@@ -226,7 +262,7 @@ async function visualProviderAnalysis(highlight, config) {
         {
           role: 'system',
           content:
-            'You are a concise fighting-game coach for a 2D gladiator game. Return only valid JSON with keys: title, summary, strengths, mistakes, coachTip, timingNote, spacingNote, attackChoiceNote. strengths and mistakes must be arrays of short strings.'
+            'You are a concise fighting-game coach for a 2D gladiator game. Return only valid JSON with keys: title, summary, strengths, mistakes, coachTip, timingNote, spacingNote, attackChoiceNote, riskNote, nextDrill. strengths and mistakes must be arrays of short strings. timingNote, spacingNote, attackChoiceNote, riskNote, nextDrill must each be one short actionable sentence.'
         },
         {
           role: 'user',

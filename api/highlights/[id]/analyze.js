@@ -5,7 +5,7 @@ import {
   getHighlightById,
   saveHighlightAnalysis
 } from '../../_lib/leaderboard-store.js'
-import { handlePreflight, sendJson } from '../../_lib/http.js'
+import { handlePreflight, readJsonBody, sendJson } from '../../_lib/http.js'
 
 function extractHighlightId(req) {
   const url = new URL(req.url || '/', 'http://localhost')
@@ -58,7 +58,16 @@ export default async function handler(req, res) {
       return
     }
 
-    if (highlight.analysisStatus === 'complete' && highlight.analysisTitle) {
+    const body = await readJsonBody(req)
+    const forceRefresh = Boolean(body.force)
+    const hasDetailedCoachRead =
+      highlight.analysisTimingNote &&
+      highlight.analysisSpacingNote &&
+      highlight.analysisAttackChoiceNote &&
+      highlight.analysisRiskNote &&
+      highlight.analysisNextDrill
+
+    if (highlight.analysisStatus === 'complete' && highlight.analysisTitle && hasDetailedCoachRead && !forceRefresh) {
       sendJson(res, 200, {
         ok: true,
         highlight
