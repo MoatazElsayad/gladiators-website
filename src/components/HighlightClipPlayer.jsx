@@ -31,7 +31,7 @@ export default function HighlightClipPlayer({ highlight, token }) {
       setFailed(false)
       setFailureReason('')
       try {
-        const response = await fetch(`${apiBaseUrl}/api/highlights/${highlight.id}/clip-sheet`, {
+        const response = await fetch(`${apiBaseUrl}/api/highlights/${highlight.id}/image?asset=clip`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

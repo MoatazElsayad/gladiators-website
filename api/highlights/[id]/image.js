@@ -8,6 +8,11 @@ function extractHighlightId(req) {
   return segments[segments.length - 2]
 }
 
+function requestedAsset(req) {
+  const url = new URL(req.url || '/', 'http://localhost')
+  return String(url.searchParams.get('asset') || 'image').trim().toLowerCase()
+}
+
 export default async function handler(req, res) {
   if (handlePreflight(req, res)) {
     return
@@ -54,7 +59,24 @@ export default async function handler(req, res) {
       return
     }
 
-    const blobResponse = await fetch(highlight.imageUrl, {
+    const asset = requestedAsset(req)
+    const wantsClip = asset === 'clip' || asset === 'replay'
+    const blobUrl = wantsClip ? highlight.clipSheetUrl : highlight.imageUrl
+    const fallbackContentType = wantsClip
+      ? highlight.clipSheetContentType || 'image/jpeg'
+      : highlight.imageContentType || 'image/png'
+
+    if (!blobUrl) {
+      sendJson(res, 404, {
+        ok: false,
+        message: wantsClip
+          ? 'This highlight does not have a replay clip.'
+          : 'This highlight does not have an image.'
+      })
+      return
+    }
+
+    const blobResponse = await fetch(blobUrl, {
       headers: {
         Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN || ''}`
       }
@@ -63,12 +85,12 @@ export default async function handler(req, res) {
     if (!blobResponse.ok) {
       sendJson(res, blobResponse.status, {
         ok: false,
-        message: 'Could not load the highlight image.'
+        message: wantsClip ? 'Could not load the highlight replay.' : 'Could not load the highlight image.'
       })
       return
     }
 
-    const contentType = blobResponse.headers.get('content-type') || highlight.imageContentType || 'image/png'
+    const contentType = blobResponse.headers.get('content-type') || fallbackContentType
     const imageBuffer = Buffer.from(await blobResponse.arrayBuffer())
 
     res.statusCode = 200
