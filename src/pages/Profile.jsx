@@ -2,22 +2,26 @@ import { motion } from 'framer-motion'
 import { BrainCircuit, LogOut, Shield, Target, Trophy, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import demonSlayer from '../assets/demon-slayer.png'
-import knight from '../assets/knight.png'
-import nightweaver from '../assets/nightweaver.png'
 import { fetchJson } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { normalizeRankName, rankBadgeSrc } from '../lib/ranks'
 
-const fighterAvatars = [
-  { keywords: ['demon'], art: demonSlayer },
-  { keywords: ['nightweaver'], art: nightweaver },
-  { keywords: ['knight', 'medieval', 'warrior', 'martial', 'huntress', 'wizard', 'arcen'], art: knight }
+const fighterProfiles = [
+  { keywords: ['demon'], file: 'Demon_Slayer.png' },
+  { keywords: ['fantasy'], file: 'Fantasy_Warrior.png' },
+  { keywords: ['medieval'], file: 'Medieval_Warrior.png' },
+  { keywords: ['martial hero'], file: 'Martial_Hero.png' },
+  { keywords: ['martial'], file: 'Martial.png' },
+  { keywords: ['huntress'], file: 'Huntress.png' },
+  { keywords: ['arcen'], file: 'Arcen.png' },
+  { keywords: ['wizard'], file: 'Wizard.png' },
+  { keywords: ['knight'], file: 'Knight.png' }
 ]
 
-function avatarForFighter(name) {
+function profileImageForFighter(name) {
   const normalized = String(name || '').toLowerCase()
-  return fighterAvatars.find((entry) => entry.keywords.some((keyword) => normalized.includes(keyword)))?.art || knight
+  const file = fighterProfiles.find((entry) => entry.keywords.some((keyword) => normalized.includes(keyword)))?.file || 'Knight.png'
+  return `/fighters/${file}`
 }
 
 function modeLabel(mode) {
@@ -167,9 +171,9 @@ export default function Profile() {
                 <div className="rounded-[24px] border border-arena-bronzeLight/25 bg-arena-void/70 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-arena-sand">Current Gladiator</p>
                   <img
-                    src={avatarForFighter(stats.currentFighter)}
-                    alt={`${stats.currentFighter} avatar`}
-                    className="pixelated mx-auto mt-5 h-44 object-contain drop-shadow-[0_0_22px_rgba(212,160,23,0.2)]"
+                    src={profileImageForFighter(stats.currentFighter)}
+                    alt={`${stats.currentFighter} profile portrait`}
+                    className="mx-auto mt-5 h-44 w-44 rounded-full border-4 border-arena-gold/60 object-cover shadow-gold"
                   />
                   <p className="mt-5 text-center font-display text-3xl uppercase tracking-[0.14em] text-arena-goldBright">
                     {stats.currentFighter}
