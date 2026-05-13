@@ -1,9 +1,10 @@
-import { uploadHighlightClipSheet, uploadHighlightImage } from '../_lib/blob-store.js'
+import { deleteHighlightAssets, uploadHighlightClipSheet, uploadHighlightImage } from '../_lib/blob-store.js'
 import { bearerTokenFromRequest, verifySessionToken } from '../_lib/auth.js'
 import {
   createBattleHighlight,
   getAuthPlayerById,
-  getHighlightsForPlayer
+  getHighlightsForPlayer,
+  pruneHighlightsForPlayer
 } from '../_lib/leaderboard-store.js'
 import { getQueryParam, handlePreflight, sendJson } from '../_lib/http.js'
 import { readMultipartBody } from '../_lib/multipart.js'
@@ -111,15 +112,26 @@ export default async function handler(req, res) {
     })
     const imageFile = files?.image || { buffer: fileBuffer, mimeType: fileMimeType }
     const clipFile = files?.clipSheet || null
-    const contentType = ensureAllowedImageType(imageFile?.mimeType)
-
-    if (!imageFile?.buffer || imageFile.buffer.length === 0) {
-      throw new Error('Highlight image is required.')
-    }
 
     const username = String(fields.username || '').trim()
     if (!username) {
       throw new Error('username is required.')
+    }
+
+    const victory = toBoolean(fields.victory)
+    if (!victory) {
+      sendJson(res, 202, {
+        ok: true,
+        skipped: true,
+        message: 'Loss highlights are ignored by AI Coach.'
+      })
+      return
+    }
+
+    const contentType = ensureAllowedImageType(imageFile?.mimeType)
+
+    if (!imageFile?.buffer || imageFile.buffer.length === 0) {
+      throw new Error('Highlight image is required.')
     }
 
     const imageUrl = await uploadHighlightImage({
@@ -150,7 +162,7 @@ export default async function handler(req, res) {
       characterName: String(fields.characterName || '').trim() || null,
       enemyType: String(fields.enemyType || '').trim() || null,
       enemyName: String(fields.enemyName || '').trim() || null,
-      victory: toBoolean(fields.victory),
+      victory,
       battleDurationSeconds: toFloat(fields.battleDurationSeconds, 0),
       score: Math.max(0, toInteger(fields.score, 0)),
       attackType: String(fields.attackType || 'attack_1').trim() || 'attack_1',
@@ -178,9 +190,14 @@ export default async function handler(req, res) {
       capturedAt: fields.capturedAt
     })
 
+    const pruning = await pruneHighlightsForPlayer(highlight.playerId, 8)
+    await deleteHighlightAssets(pruning.assetUrls)
+
     sendJson(res, 201, {
       ok: true,
-      highlight
+      highlight,
+      retainedHighlightLimit: 8,
+      prunedHighlightCount: pruning.deletedCount
     })
   } catch (error) {
     const statusCode = error.message?.includes('Invalid game upload API key')

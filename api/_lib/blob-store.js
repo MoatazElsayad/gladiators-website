@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob'
+import { del, put } from '@vercel/blob'
 
 function sanitizeSegment(value, fallback) {
   const normalized = String(value || fallback)
@@ -60,4 +60,22 @@ export async function uploadHighlightClipSheet({
   })
 
   return blob.url
+}
+
+export async function deleteHighlightAssets(urls = []) {
+  const safeUrls = [...new Set(
+    urls
+      .map((url) => String(url || '').trim())
+      .filter(Boolean)
+  )]
+
+  if (safeUrls.length === 0) {
+    return
+  }
+
+  try {
+    await del(safeUrls)
+  } catch (error) {
+    console.warn('Failed to delete old highlight blob assets:', error?.message || error)
+  }
 }

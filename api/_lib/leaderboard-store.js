@@ -1072,7 +1072,7 @@ export async function createBattleHighlight(payload) {
   }
 }
 
-export async function getHighlightsForPlayer(username, limit = 24) {
+export async function getHighlightsForPlayer(username, limit = 8) {
   await ensureSchema()
   const sql = getSqlClient()
   const normalized = normalizeUsername(username)
@@ -1088,11 +1088,44 @@ export async function getHighlightsForPlayer(username, limit = 24) {
     FROM battle_highlights h
     JOIN players p ON p.id = h.player_id
     WHERE p.normalized_username = ${normalized}
+      AND h.victory = TRUE
     ORDER BY h.captured_at DESC, h.id DESC
-    LIMIT ${Math.min(Math.max(toInteger(limit, 24), 1), 60)};
+    LIMIT ${Math.min(Math.max(toInteger(limit, 8), 1), 8)};
   `
 
   return rows.map((row) => mapHighlightRow(row))
+}
+
+export async function pruneHighlightsForPlayer(playerId, keepCount = 8) {
+  await ensureSchema()
+  const sql = getSqlClient()
+  const safePlayerId = Math.max(0, toInteger(playerId, 0))
+  const safeKeepCount = Math.min(Math.max(toInteger(keepCount, 8), 1), 8)
+
+  if (!safePlayerId) {
+    return { deletedCount: 0, assetUrls: [] }
+  }
+
+  const deletedRows = await sql`
+    WITH old_highlights AS (
+      SELECT id
+      FROM battle_highlights
+      WHERE player_id = ${safePlayerId}
+      ORDER BY captured_at DESC, id DESC
+      OFFSET ${safeKeepCount}
+    )
+    DELETE FROM battle_highlights h
+    USING old_highlights o
+    WHERE h.id = o.id
+    RETURNING h.image_url, h.clip_sheet_url;
+  `
+
+  return {
+    deletedCount: deletedRows.length,
+    assetUrls: deletedRows
+      .flatMap((row) => [row.image_url, row.clip_sheet_url])
+      .filter(Boolean)
+  }
 }
 
 export async function getHighlightById(id) {
@@ -1110,6 +1143,7 @@ export async function getHighlightById(id) {
     FROM battle_highlights h
     JOIN players p ON p.id = h.player_id
     WHERE h.id = ${highlightId}
+      AND h.victory = TRUE
     LIMIT 1;
   `
 
