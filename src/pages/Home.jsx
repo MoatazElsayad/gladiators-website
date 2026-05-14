@@ -4,7 +4,6 @@ import {
   Crown,
   Download,
   Flame,
-  MonitorDown,
   Shield,
   ShieldAlert,
   Sparkles,
@@ -125,6 +124,7 @@ export default function Home() {
   const [recentMatches, setRecentMatches] = useState(() => normalizeMatchRows(fallbackMatches))
   const [recentMatchesSource, setRecentMatchesSource] = useState('fallback')
   const [recentMatchesError, setRecentMatchesError] = useState('')
+  const logoPath = `${import.meta.env.BASE_URL}logo.png`
 
   useEffect(() => {
     let cancelled = false
@@ -234,57 +234,47 @@ export default function Home() {
             initial={{ opacity: 0, x: 28 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.15 }}
-            className="relative z-10 panel-card overflow-hidden p-6 sm:p-8"
+            className="relative z-10 panel-card overflow-hidden p-6 text-center sm:p-8"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,160,23,0.22),transparent_30%),linear-gradient(150deg,rgba(104,13,13,0.35),transparent_55%)]" />
-            <div className="relative">
-              <div className="flex items-center justify-between gap-4">
-                <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
-                  <MonitorDown className="h-6 w-6" />
-                </div>
-                <span className="status-pill border-emerald-400/35 bg-emerald-400/10 text-emerald-200">
-                  Windows
-                </span>
-              </div>
+            <motion.div
+              aria-hidden="true"
+              animate={{ opacity: [0.34, 0.68, 0.34], scale: [0.94, 1.04, 0.94] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+              className="pointer-events-none absolute inset-8 rounded-full bg-arena-gold/15 blur-3xl"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(212,160,23,0.2),transparent_34%),linear-gradient(180deg,rgba(104,13,13,0.24),transparent_60%)]" />
+            <div className="relative flex min-h-[430px] flex-col items-center justify-center">
+              <motion.img
+                src={logoPath}
+                alt="Gladiators logo"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                className="h-auto w-56 drop-shadow-[0_0_24px_rgba(255,206,48,0.28)] sm:w-64"
+              />
 
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">
-                Playable Build
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-arena-sand">
+                Windows Installer
               </p>
-              <h2 className="mt-3 font-display text-4xl uppercase tracking-[0.16em] text-arena-goldBright sm:text-5xl">
-                Install Gladiators
-              </h2>
-              <p className="mt-5 text-sm leading-7 text-arena-sand">
-                Download the Windows installer, launch the arena locally, and keep your profile connected
-                to the website leaderboard and AI Coach.
-              </p>
-
               <a
                 href={windowsInstallerUrl || '#download-not-ready'}
                 onClick={handleMissingInstaller}
-                className="blood-button mt-8 w-full justify-center text-xs"
+                className="blood-button mt-5 w-full justify-center text-xs"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download Installer
+                Download for Windows
               </a>
 
-              <div className="mt-6 grid gap-3 text-xs uppercase tracking-[0.16em] text-arena-sand sm:grid-cols-2">
-                <div className="rounded-2xl border border-arena-bronzeLight/25 bg-black/20 p-4">
-                  <p>Package</p>
-                  <p className="mt-2 text-base font-semibold normal-case tracking-normal text-arena-parchment">
-                    Setup.exe
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-arena-bronzeLight/25 bg-black/20 p-4">
-                  <p>Size</p>
-                  <p className="mt-2 text-base font-semibold normal-case tracking-normal text-arena-parchment">
-                    ~190 MB
-                  </p>
-                </div>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3 text-xs uppercase tracking-[0.16em] text-arena-sand">
+                <span className="rounded-full border border-arena-bronzeLight/30 bg-black/20 px-4 py-2">
+                  Setup.exe
+                </span>
+                <span className="rounded-full border border-arena-bronzeLight/30 bg-black/20 px-4 py-2">
+                  ~190 MB
+                </span>
               </div>
 
-              <p className="mt-6 text-xs leading-6 text-arena-sand">
-                Windows may show a security warning for unsigned student builds. Choose to keep/run it only
-                if you downloaded it from this official site.
+              <p className="mt-5 max-w-sm text-xs leading-6 text-arena-sand">
+                Windows may warn about unsigned student builds. Download only from this official page.
               </p>
             </div>
           </motion.aside>
