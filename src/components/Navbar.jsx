@@ -22,7 +22,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const location = useLocation()
-  const logoPath = `${import.meta.env.BASE_URL}logo.svg`
+  const logoPath = `${import.meta.env.BASE_URL}logo.png`
   const { isAuthenticated, player, logout } = useAuth()
 
   useEffect(() => {
