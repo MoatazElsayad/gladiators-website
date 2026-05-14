@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Menu, Swords, X } from 'lucide-react'
+import { Download, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
@@ -20,7 +20,6 @@ const linkClasses = ({ isActive }) =>
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [showModal, setShowModal] = useState(false)
   const location = useLocation()
   const logoPath = `${import.meta.env.BASE_URL}logo.png`
   const { isAuthenticated, player, logout } = useAuth()
@@ -28,22 +27,6 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
-
-  useEffect(() => {
-    if (!showModal) {
-      return undefined
-    }
-
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setShowModal(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleEscape)
-
-    return () => window.removeEventListener('keydown', handleEscape)
-  }, [showModal])
 
   return (
     <>
@@ -84,10 +67,10 @@ export default function Navbar() {
                 Sign In
               </NavLink>
             )}
-            <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
-              <Swords className="mr-2 h-4 w-4" />
+            <a href="/api/download/windows" className="blood-button text-xs">
+              <Download className="mr-2 h-4 w-4" />
               Play Game
-            </button>
+            </a>
           </div>
 
           <button
@@ -128,53 +111,15 @@ export default function Navbar() {
                     Sign In
                   </NavLink>
                 )}
-                <button type="button" onClick={() => setShowModal(true)} className="blood-button text-xs">
-                  <Swords className="mr-2 h-4 w-4" />
+                <a href="/api/download/windows" className="blood-button text-xs">
+                  <Download className="mr-2 h-4 w-4" />
                   Play Game
-                </button>
+                </a>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
-
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowModal(false)}
-            aria-hidden={!showModal}
-          >
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="play-game-modal-title"
-              className="gold-frame w-full max-w-lg p-8 text-center"
-              initial={{ y: 24, opacity: 0, scale: 0.96 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 12, opacity: 0, scale: 0.98 }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <p
-                id="play-game-modal-title"
-                className="mb-3 font-display text-3xl uppercase tracking-[0.18em] text-arena-goldBright"
-              >
-                Arena Gate Locked
-              </p>
-              <p className="section-copy">
-                The live game embed is coming soon. This page is ready for launch now, and the playable
-                build can drop into the hero section as soon as it is available.
-              </p>
-              <button type="button" onClick={() => setShowModal(false)} className="blood-button mt-6 text-xs">
-                Return to Camp
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   )
 }

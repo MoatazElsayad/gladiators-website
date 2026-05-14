@@ -2,7 +2,9 @@ import { motion } from 'framer-motion'
 import {
   ArrowRight,
   Crown,
+  Download,
   Flame,
+  MonitorDown,
   Shield,
   ShieldAlert,
   Sparkles,
@@ -160,17 +162,13 @@ export default function Home() {
     { label: 'Backend Sync', value: recentMatchesSource === 'live' ? 'Connected' : 'Fallback' }
   ], [recentMatchesSource])
 
-  const scrollToTrailer = () => {
-    document.getElementById('trailer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   return (
     <div className="pb-8">
       <section id="hero" className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(212,160,23,0.22),transparent_26%),radial-gradient(circle_at_80%_14%,rgba(188,26,26,0.18),transparent_22%),linear-gradient(180deg,rgba(26,20,15,0.2),rgba(26,20,15,0.88))]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-arena-void to-transparent" />
 
-        <div className="section-shell grid min-h-[calc(100vh-5rem)] items-center gap-16 py-14 lg:py-20">
+        <div className="section-shell grid min-h-[calc(100vh-5rem)] items-center gap-12 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)] lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -193,10 +191,10 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <button type="button" onClick={scrollToTrailer} className="blood-button text-xs">
-                <Flame className="mr-2 h-4 w-4" />
-                Enter the Arena
-              </button>
+              <a href="/api/download/windows" className="blood-button text-xs">
+                <Download className="mr-2 h-4 w-4" />
+                Download Windows Build
+              </a>
               <Link to="/leaderboard" className="stone-button text-xs">
                 View Arena Ladder
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -227,6 +225,60 @@ export default function Home() {
             </div>
           </motion.div>
 
+          <motion.aside
+            initial={{ opacity: 0, x: 28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="relative z-10 panel-card overflow-hidden p-6 sm:p-8"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,160,23,0.22),transparent_30%),linear-gradient(150deg,rgba(104,13,13,0.35),transparent_55%)]" />
+            <div className="relative">
+              <div className="flex items-center justify-between gap-4">
+                <div className="rounded-2xl border border-arena-gold/35 bg-arena-gold/10 p-3 text-arena-goldBright">
+                  <MonitorDown className="h-6 w-6" />
+                </div>
+                <span className="status-pill border-emerald-400/35 bg-emerald-400/10 text-emerald-200">
+                  Windows
+                </span>
+              </div>
+
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-arena-sand">
+                Playable Build
+              </p>
+              <h2 className="mt-3 font-display text-4xl uppercase tracking-[0.16em] text-arena-goldBright sm:text-5xl">
+                Install Gladiators
+              </h2>
+              <p className="mt-5 text-sm leading-7 text-arena-sand">
+                Download the Windows installer, launch the arena locally, and keep your profile connected
+                to the website leaderboard and AI Coach.
+              </p>
+
+              <a href="/api/download/windows" className="blood-button mt-8 w-full justify-center text-xs">
+                <Download className="mr-2 h-4 w-4" />
+                Download Installer
+              </a>
+
+              <div className="mt-6 grid gap-3 text-xs uppercase tracking-[0.16em] text-arena-sand sm:grid-cols-2">
+                <div className="rounded-2xl border border-arena-bronzeLight/25 bg-black/20 p-4">
+                  <p>Package</p>
+                  <p className="mt-2 text-base font-semibold normal-case tracking-normal text-arena-parchment">
+                    Setup.exe
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-arena-bronzeLight/25 bg-black/20 p-4">
+                  <p>Size</p>
+                  <p className="mt-2 text-base font-semibold normal-case tracking-normal text-arena-parchment">
+                    ~190 MB
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-6 text-xs leading-6 text-arena-sand">
+                Windows may show a security warning for unsigned student builds. Choose to keep/run it only
+                if you downloaded it from this official site.
+              </p>
+            </div>
+          </motion.aside>
         </div>
       </section>
 

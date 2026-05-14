@@ -7,6 +7,7 @@
     "dev": "node scripts/dev.js",
     "dev:vite": "vite",
     "build": "vite build",
+    "upload:installer": "node scripts/upload-installer.mjs",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
