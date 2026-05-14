@@ -64,35 +64,18 @@ const blobName = `downloads/GladiatorsSetup-${new Date().toISOString().slice(0, 
 const installer = fs.createReadStream(installerPath)
 const stat = fs.statSync(installerPath)
 
-let access = 'public'
-let blob
-
-try {
-  blob = await put(blobName, installer, {
-    access,
-    addRandomSuffix: false,
-    contentType: 'application/vnd.microsoft.portable-executable',
-    token: process.env.BLOB_READ_WRITE_TOKEN
-  })
-} catch (error) {
-  if (!String(error?.message || '').includes('private store')) {
-    throw error
-  }
-
-  access = 'private'
-  blob = await put(blobName, fs.createReadStream(installerPath), {
-    access,
-    addRandomSuffix: false,
-    contentType: 'application/vnd.microsoft.portable-executable',
-    token: process.env.BLOB_READ_WRITE_TOKEN
-  })
-}
+const blob = await put(blobName, installer, {
+  access: 'public',
+  addRandomSuffix: false,
+  contentType: 'application/vnd.microsoft.portable-executable',
+  token: process.env.BLOB_READ_WRITE_TOKEN
+})
 
 if (shouldWriteEnv) {
-  upsertEnvValue('.env.local', 'GLADIATORS_WINDOWS_INSTALLER_BLOB_URL', blob.url)
+  upsertEnvValue('.env.local', 'VITE_GLADIATORS_WINDOWS_INSTALLER_URL', blob.url)
 }
 
 console.log(`Uploaded ${blobName}`)
-console.log(`Access: ${access}`)
+console.log('Access: public')
 console.log(`Size: ${(stat.size / 1024 / 1024).toFixed(1)} MB`)
-console.log(`GLADIATORS_WINDOWS_INSTALLER_BLOB_URL=${blob.url}`)
+console.log(`VITE_GLADIATORS_WINDOWS_INSTALLER_URL=${blob.url}`)

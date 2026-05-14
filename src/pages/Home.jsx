@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom'
 import { fetchJson } from '../lib/api'
 import GladiatorCarousel from '../components/GladiatorCarousel'
 import GameModesShowcase from '../components/GameModesShowcase'
+import { handleMissingInstaller, windowsInstallerUrl } from '../lib/downloads'
 
 const featureCards = [
   {
@@ -191,7 +192,11 @@ export default function Home() {
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <a href="/api/download/windows" className="blood-button text-xs">
+              <a
+                href={windowsInstallerUrl || '#download-not-ready'}
+                onClick={handleMissingInstaller}
+                className="blood-button text-xs"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download Windows Build
               </a>
@@ -253,7 +258,11 @@ export default function Home() {
                 to the website leaderboard and AI Coach.
               </p>
 
-              <a href="/api/download/windows" className="blood-button mt-8 w-full justify-center text-xs">
+              <a
+                href={windowsInstallerUrl || '#download-not-ready'}
+                onClick={handleMissingInstaller}
+                className="blood-button mt-8 w-full justify-center text-xs"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download Installer
               </a>

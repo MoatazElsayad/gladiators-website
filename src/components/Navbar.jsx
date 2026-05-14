@@ -3,6 +3,7 @@ import { Download, Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { handleMissingInstaller, windowsInstallerUrl } from '../lib/downloads'
 
 const navItems = [
   { label: 'Home', to: '/' },
@@ -67,7 +68,11 @@ export default function Navbar() {
                 Sign In
               </NavLink>
             )}
-            <a href="/api/download/windows" className="blood-button text-xs">
+            <a
+              href={windowsInstallerUrl || '#download-not-ready'}
+              onClick={handleMissingInstaller}
+              className="blood-button text-xs"
+            >
               <Download className="mr-2 h-4 w-4" />
               Play Game
             </a>
@@ -111,7 +116,11 @@ export default function Navbar() {
                     Sign In
                   </NavLink>
                 )}
-                <a href="/api/download/windows" className="blood-button text-xs">
+                <a
+                  href={windowsInstallerUrl || '#download-not-ready'}
+                  onClick={handleMissingInstaller}
+                  className="blood-button text-xs"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Play Game
                 </a>
